@@ -8,7 +8,7 @@ import pickle
 DATA_PATH = "./data/DEV"
 PRE_TOKEN_DATA_PATH = "./data/tokens_DEV_cache.p"
 PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p"
-USE_CACHE = False #set to true to load the pre_computed token
+USE_CACHE = True #set to true to load the pre_computed token
 ###
 
 def get_all_file_names(data_path = DATA_PATH):
@@ -40,8 +40,7 @@ def get_token_from_file(file_name):
         data = json.load(f)
         content = data["content"]
         tokens = nltk.tokenize.word_tokenize(content)
-        stop_words = set(nltk.corpus.stopwords.words('english'))
-        filtered_tokens = [word.lower() for word in tokens if word.lower() not in stop_words and word.isalpha()]
+        filtered_tokens = [word.lower() for word in tokens]
         return set(filtered_tokens)
 
 def get_all_tokens(dataset):
