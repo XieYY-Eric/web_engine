@@ -1,6 +1,7 @@
 import os
 import json
 import nltk
+from nltk.stem import PorterStemmer
 import pickle
 import time
 from bs4 import BeautifulSoup
@@ -12,9 +13,10 @@ PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p"
 USE_CACHE = False #set to true to load the pre_computed token
 MAX_WORD = 20000
 MIN_WORD = 5000
+PS = PorterStemmer()
 ###
 
-def get_all_file_names(data_path = DATA_PATH):
+def get_all_file_names(data_path=DATA_PATH):
     """
     get all the file names from a data_path directory
     return as list
@@ -27,12 +29,12 @@ def get_all_file_names(data_path = DATA_PATH):
 
     print("Generating file names...")
     file_names = []
-    for root,dirs,files in os.walk(DATA_PATH):
+    for root, dirs, files in os.walk(DATA_PATH):
         for file in files:
-            file_names.append(os.path.join(root,file))
+            file_names.append(os.path.join(root, file))
         print(f"Found {len(files)} file under {root} directory")
     print(f"Total number of file found: {len(file_names)}")
-    store_data(file_names,PRE_FILENAME_DATA_PATH)
+    store_data(file_names, PRE_FILENAME_DATA_PATH)
     return file_names
 
 def is_html(content):
