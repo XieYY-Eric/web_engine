@@ -127,7 +127,9 @@ def main():
     tokens = get_all_tokens(dataset)
     print(f"read {len(tokens)} tokens from cache")
     tokens = normalize(tokens)
-    print("after normalzing:",len(tokens),tokens[:20])
+    print("after normalizing:",len(tokens),tokens[:20])
+    filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024;
+    print("Index is", filekb, "KBs large");
     
     
 
