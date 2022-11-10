@@ -15,7 +15,7 @@ PRE_TOKEN_DATA_PATH = "./data/tokens_DEV_cache.p"
 PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p" 
 USE_CACHE = False #set to true to load the pre_computed token
 MAX_WORD = 20000
-MIN_WORD = 5000
+MIN_WORD = 1000
 PS = PorterStemmer()
 ###
 
@@ -23,16 +23,17 @@ PS = PorterStemmer()
 
 ##### Private/Helper/Inner function ---- usually called by other important function
 def is_html(content):
-    html_tag = r"<!DOCTYPE html"
-    return html_tag in content #expecting the top few string are html_tag
+    html_tag = [r"<!DOCTYPE html",r"<!DOCTYPE HTML"]
+    for tag in html_tag:
+        if tag in content[:100]:
+            return True
+    return False #expecting the top few string are html_tag
 
 def can_be_index(content):
     if not is_html(content):
-        print("not html")
         return False
     content = BeautifulSoup(content).get_text()
     if len(content) < MIN_WORD or len(content) > MAX_WORD:
-        print(f"size {len(content)}")
         return False
     return True
 
@@ -45,11 +46,14 @@ def get_token_from_file(file_name):
             data = json.load(f)
             content = data["content"] #could be string or html string
             if not can_be_index(content):
+                f.close()
                 return (-1,set())
             tokens = nltk.tokenize.word_tokenize(content)
             filtered_tokens = [word.lower() for word in tokens]
+            f.close()
             return (1,set(filtered_tokens))
         except Exception as e:
+            f.close()
             return (-1,set())
 
 def store_data(data,filename=PRE_TOKEN_DATA_PATH):
@@ -139,16 +143,15 @@ def unique(tokenlist):
 
 def main():
     dataset = get_all_file_names(DATA_PATH)
-    indexablefiles,tokens = get_all_files_and_tokens(dataset[:1000])
-    tokens = normalize(tokens)
-    tokens = unique(tokens)
-    print("after normalizing:",len(tokens),tokens[:20])
-    filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024
-    print("Index is", filekb, "KBs large")
 
-    print(get_token_from_file(dataset[0]))
-    print(is_html(dataset[0]))
-    print("<!DOCTYPE html>\r\n<!--[if lt IE 7")
+    indexablefiles,tokens = get_all_files_and_tokens(dataset[:1000])
+    # tokens = normalize(tokens)
+    # tokens = unique(tokens)
+    # print("after normalizing:",len(tokens),tokens[:20])
+    # filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024
+    # print("Index is", filekb, "KBs large")
+
+ 
     ###indexing pages
     # myindexer = indexer.indexer(True)
     # ###create batches of files
