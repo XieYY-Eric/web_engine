@@ -112,10 +112,13 @@ def normalize(tokenlist):
     filter_tokens = [token.lower() for token in tokenlist]
     #stemming
     filter_tokens = [PS.stem(token,to_lowercase=True) for token in tokenlist]
+    return filter_tokens
+
+def unique(tokenlist):
     #removing duplicate
     unique = set()  
     result = []
-    for token in filter_tokens:
+    for token in tokenlist:
         if token not in unique:
             result.append(token)
             unique.add(token)
@@ -127,6 +130,7 @@ def main():
     tokens = get_all_tokens(dataset)
     print(f"read {len(tokens)} tokens from cache")
     tokens = normalize(tokens)
+    tokens = unique(tokens)
     print("after normalizing:",len(tokens),tokens[:20])
     filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024;
     print("Index is", filekb, "KBs large");
