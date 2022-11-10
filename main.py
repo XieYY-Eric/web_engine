@@ -7,12 +7,13 @@ import time
 from bs4 import BeautifulSoup
 import re
 import string
+import indexer
 
 ### Global variables, 
 DATA_PATH = "./data/DEV"
 PRE_TOKEN_DATA_PATH = "./data/tokens_DEV_cache.p"
 PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p" 
-USE_CACHE = True #set to true to load the pre_computed token
+USE_CACHE = False #set to true to load the pre_computed token
 MAX_WORD = 20000
 MIN_WORD = 5000
 PS = PorterStemmer()
@@ -22,29 +23,34 @@ PS = PorterStemmer()
 
 ##### Private/Helper/Inner function ---- usually called by other important function
 def is_html(content):
-    html_tag = "<!DOCTYPE html"
-    return content[:len(html_tag)] == html_tag
+    html_tag = r"<!DOCTYPE html"
+    return html_tag in content #expecting the top few string are html_tag
+
+def can_be_index(content):
+    if not is_html(content):
+        print("not html")
+        return False
+    content = BeautifulSoup(content).get_text()
+    if len(content) < MIN_WORD or len(content) > MAX_WORD:
+        print(f"size {len(content)}")
+        return False
+    return True
 
 def get_token_from_file(file_name):
     """
-    get all the token from one file, return as a set
+    get all the token from one file, return as a tuple (status_code, result)
     """
     with open(file_name) as f:
         try:
             data = json.load(f)
             content = data["content"] #could be string or html string
-            #check for html file
-            if not is_html(content):
-                return set()
-            soup = BeautifulSoup(content)
-            content = soup.get_text()
-            if len(content) < MIN_WORD or len(content) > MAX_WORD:
-                return set()
+            if not can_be_index(content):
+                return (-1,set())
             tokens = nltk.tokenize.word_tokenize(content)
             filtered_tokens = [word.lower() for word in tokens]
-            return set(filtered_tokens)
-        except:
-            return set()
+            return (1,set(filtered_tokens))
+        except Exception as e:
+            return (-1,set())
 
 def store_data(data,filename=PRE_TOKEN_DATA_PATH):
     with open(filename,"wb") as f:
@@ -73,20 +79,19 @@ def get_all_file_names(data_path=DATA_PATH):
     for root, dirs, files in os.walk(DATA_PATH):
         for file in files:
             file_names.append(os.path.join(root, file))
-        print(f"Found {len(files)} file under {root} directory")
-    print(f"Total number of file found: {len(file_names)}")
-    store_data(file_names, PRE_FILENAME_DATA_PATH)
+        print(f"Found {len(files)}  file under {root} directory")
+    print(f"Total number of  file found: {len(file_names)}")
     return file_names
 
 
-def get_all_tokens(dataset):
+def get_all_files_and_tokens(dataset):
     """
     get all tokens from the dataset, return as a list
     """
     if USE_CACHE:
         print("Getting tokens from cache...")
-        return read_data(PRE_TOKEN_DATA_PATH) 
-
+        return read_data(PRE_FILENAME_DATA_PATH),read_data(PRE_TOKEN_DATA_PATH) 
+    indexable_files = []
     print("generating tokens...")
     tokens = set()
     size = len(dataset)
@@ -94,15 +99,22 @@ def get_all_tokens(dataset):
     begin = time.time()
     end = time.time()
     for i,filename in enumerate(dataset):
-        tokens = tokens.union(get_token_from_file(filename))
+        status,tokens_result = get_token_from_file(filename)
+        if status == 1:
+            tokens = tokens.union(tokens_result)
+            indexable_files.append(filename)
+
         if (i+1)%print_every == 0:
             end = time.time()
             print(f"{i+1} files completed, {100*(i+1)/size:.2f}%  time {(end-begin):.3f}s")
             begin = end
+
+    print(f"number of indexable files: {len(indexable_files)}")
     print(f"token generated completed with size {len(tokens)}")
     tokens = list(tokens)
+    store_data(indexable_files,PRE_FILENAME_DATA_PATH)
     store_data(tokens,PRE_TOKEN_DATA_PATH)
-    return tokens
+    return indexable_files,tokens
 
 
 def normalize(tokenlist):
@@ -127,13 +139,20 @@ def unique(tokenlist):
 
 def main():
     dataset = get_all_file_names(DATA_PATH)
-    tokens = get_all_tokens(dataset)
-    print(f"read {len(tokens)} tokens from cache")
+    indexablefiles,tokens = get_all_files_and_tokens(dataset[:1000])
     tokens = normalize(tokens)
     tokens = unique(tokens)
     print("after normalizing:",len(tokens),tokens[:20])
-    filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024;
-    print("Index is", filekb, "KBs large");
+    filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024
+    print("Index is", filekb, "KBs large")
+
+    print(get_token_from_file(dataset[0]))
+    print(is_html(dataset[0]))
+    print("<!DOCTYPE html>\r\n<!--[if lt IE 7")
+    ###indexing pages
+    # myindexer = indexer.indexer(True)
+    # ###create batches of files
+    # print(myindexer.indices)
     
     
 
