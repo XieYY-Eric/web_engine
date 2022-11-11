@@ -55,12 +55,12 @@ def get_token_from_file(file_name):
                 print(f"name {file_name}")
                 input()
                 return (-1,set())
-            soup = BeautifulSoup(content)
+            soup = BeautifulSoup(content, "html.parser")
             content = ""
             for section in soup.find_all('p'):
                 content += (section.get_text() + " ") 
             tokens = nltk.tokenize.word_tokenize(content)
-            filtered_tokens = [word.lower() for word in tokens]
+            filtered_tokens = normalize(filtered_tokens)
             return (1,set(filtered_tokens))
         except Exception as e:
             return (-1,set())
@@ -126,6 +126,8 @@ def get_all_files_and_tokens(dataset):
 def normalize(tokenlist):
     #remove punctuation
     filter_tokens = [re.sub(r'[^\w\s]', '', token) for token in tokenlist]
+    #remove non-alphanumeric
+    tokenlist = filter(lambda token: token.isalnum(), tokenlist)
     #lower
     filter_tokens = [token.lower() for token in tokenlist]
     #stemming
