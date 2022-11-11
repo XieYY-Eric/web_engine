@@ -103,10 +103,12 @@ class indexer:
             table1 =  pickle.load(f)
         with open(file2,"rb") as f:
             table2 = pickle.load(f)
-        for k, v in table1[token] + table2[token]:
-            table1[k] = table1.get(k, 0) + v
+        for token in table2:
+            if token in table1.keys():
+                for k, v in table1[token] + table2[token]:
+                    table1[k] = table1.get(k, 0) + v
         '''
-        with open(fileName, 'wb') as f: 
+        with open(fileName, 'wb') as f:
             pickle.dump(table1, f)    
         '''
 
