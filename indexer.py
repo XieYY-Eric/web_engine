@@ -1,3 +1,4 @@
+from ast import Lambda
 from lib2to3.pgen2.tokenize import tokenize
 import pickle
 from collections import namedtuple
@@ -36,6 +37,10 @@ def normalize(tokenlist):
     #stemming
     #filter_tokens = [PS.stem(token,to_lowercase=True) for token in tokenlist]
     return filter_tokens
+
+def read_data(filename):
+    with open(filename,"rb") as f:
+        return pickle.load(f)
 
 
 Pair = namedtuple("Pair", ["DocID", "Count"])
@@ -97,7 +102,25 @@ class indexer:
             print(f"Batch {i+1}/{number_of_batch} completed {(end-begin):.3f}s")
             begin = end
         print(f"number of pages indexed {len(self.indexedDocument)}")
+        self.sort_to_partial_file(number_of_batch)
     
+
+    def sort_to_partial_file(self, number_of_batch):
+        for i in range(0, number_of_batch):
+            file_to_open = self._partial_index_file_prefix+str(i)+".p"
+            file_to_write = self._partial_index_file_prefix+str(i)+".txt"
+            data = read_data(file_to_open)
+            partial_index = open(file_to_write, "a")
+            for j in sorted(data.keys()):
+                info = data[j]
+                info.sort(key=lambda x:x.DocID)
+                partial_index.write(f"{j}: {info}/n")
+            partial_index.close()
+
+    def merge_files(self, number_of_files):
+        pass
+
+        '''
     def merge(self,file1,file2):
         with open(file1,"rb") as f:
             table1 =  pickle.load(f)
@@ -106,12 +129,12 @@ class indexer:
         for token in table2:
             if token in table1.keys():
                 for k, v in table1[token] + table2[token]:
-                    table1[k] = table1.get(k, 0) + v
+                    table1[k] = table1.get(k, 0) + v'''
         '''
         with open(fileName, 'wb') as f:
             pickle.dump(table1, f)    
         '''
-
+        
             
 
 
