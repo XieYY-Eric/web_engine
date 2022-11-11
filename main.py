@@ -158,7 +158,7 @@ def main():
 
  
     ###indexing pages
-    myindexer = indexer.indexer(dataset[:2048],1024,INDEX_TABLE_PREFIX,MIN_WORD,MAX_WORD)
+    myindexer = indexer.indexer(dataset,1024,INDEX_TABLE_PREFIX,MIN_WORD,MAX_WORD)
     myindexer.index_all_Doc()
     ###create batches of files
     index_table1 = read_data("./data/Index_tables/0.p")
