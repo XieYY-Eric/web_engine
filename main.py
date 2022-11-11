@@ -13,10 +13,10 @@ import indexer
 DATA_PATH = "./data/DEV"
 PRE_TOKEN_DATA_PATH = "./data/tokens_DEV_cache.p"
 PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p" 
-USE_CACHE = False #set to true to load the pre_computed token
-MAX_WORD = 30000
-MIN_WORD = 500
-PS = PorterStemmer()
+INDEX_TABLE_PREFIX="./data/Index_tables/"
+USE_CACHE = True 
+MAX_WORD = 50000
+MIN_WORD = 10
 ###
 
 
@@ -25,19 +25,22 @@ PS = PorterStemmer()
 def is_html(content):
     html_tag = [r"<!DOCTYPE html",r"<!DOCTYPE HTML"]
     for tag in html_tag:
-        if tag in content[:100]:
+        if tag in content:
             return True
     return False #expecting the top few string are html_tag
 
 def can_be_index(content):
     try:
         if not is_html(content):
+            print(content[:100])
             return False
         content = BeautifulSoup(content).get_text()
         if len(content) < MIN_WORD or len(content) > MAX_WORD:
+            print("word count",len(content))
             return False
         return True
     except:
+        print("Exception")
         return False
 
 def get_token_from_file(file_name):
@@ -49,6 +52,8 @@ def get_token_from_file(file_name):
             data = json.load(f)
             content = data["content"] #could be string or html string
             if not can_be_index(content):
+                print(f"name {file_name}")
+                input()
                 return (-1,set())
             soup = BeautifulSoup(content)
             content = ""
@@ -76,12 +81,6 @@ def get_all_file_names(data_path=DATA_PATH):
     get all the file names from a data_path directory
     return as list
     """
-    if USE_CACHE:
-        print("Getting file names from cache...")
-        data = read_data(PRE_FILENAME_DATA_PATH)
-        print(f"Total number of file read: {len(data)}")
-        return data
-
     print("Generating file names...")
     file_names = []
     for root, dirs, files in os.walk(DATA_PATH):
@@ -90,7 +89,6 @@ def get_all_file_names(data_path=DATA_PATH):
         print(f"Found {len(files)}  file under {root} directory")
     print(f"Total number of  file found: {len(file_names)}")
     return file_names
-
 
 def get_all_files_and_tokens(dataset):
     """
@@ -120,8 +118,8 @@ def get_all_files_and_tokens(dataset):
     print(f"number of indexable files: {len(indexable_files)}")
     print(f"token generated completed with size {len(tokens)}")
     tokens = list(tokens)
-    store_data(indexable_files,PRE_FILENAME_DATA_PATH)
-    store_data(tokens,PRE_TOKEN_DATA_PATH)
+    # store_data(indexable_files,PRE_FILENAME_DATA_PATH)
+    # store_data(tokens,PRE_TOKEN_DATA_PATH)
     return indexable_files,tokens
 
 
@@ -131,7 +129,7 @@ def normalize(tokenlist):
     #lower
     filter_tokens = [token.lower() for token in tokenlist]
     #stemming
-    filter_tokens = [PS.stem(token,to_lowercase=True) for token in tokenlist]
+    #filter_tokens = [PS.stem(token,to_lowercase=True) for token in tokenlist]
     return filter_tokens
 
 def unique(tokenlist):
@@ -145,23 +143,32 @@ def unique(tokenlist):
     return result
 
 
+
+
+
 def main():
     dataset = get_all_file_names(DATA_PATH)
-    indexablefiles,tokens = get_all_files_and_tokens(dataset)
-    tokens = normalize(tokens)
-    tokens = unique(tokens)
-    print("after normalizing:",len(tokens),tokens[:20])
+    # indexablefiles,tokens = get_all_files_and_tokens(dataset)
+    # print("before normalizing:",len(tokens),tokens[:20])
+    # tokens = normalize(tokens)
+    # tokens = unique(tokens)
+    # print("after normalizing:",len(tokens),tokens[:20])
     # filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024
     # print("Index is", filekb, "KBs large")
 
  
     ###indexing pages
-    myindexer = indexer.indexer(indexablefiles[:1024],tokens)
+    myindexer = indexer.indexer(dataset[:2048],1024,INDEX_TABLE_PREFIX,MIN_WORD,MAX_WORD)
     myindexer.index_all_Doc()
     ###create batches of files
-    index_table1 = read_data("./data/Index_table/0.p")
-    index_table2 = read_data("./data/Index_table/1.p")
-    
+    index_table1 = read_data("./data/Index_tables/0.p")
+    index_table2 = read_data("./data/Index_tables/1.p")
+    if USE_CACHE:
+        store_data(myindexer.indexedDocument,"./data/Index_tables/IndexedPages.p")
+    # print(index_table1)
+    # print("--------------\n")
+    # print(index_table2)
+
     
 
 
