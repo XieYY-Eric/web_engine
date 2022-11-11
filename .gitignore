@@ -1,1 +1,4 @@
 .vs
+data/DEV/*
+__pycache__
+.*
