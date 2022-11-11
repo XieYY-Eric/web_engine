@@ -30,12 +30,15 @@ def is_html(content):
     return False #expecting the top few string are html_tag
 
 def can_be_index(content):
-    if not is_html(content):
+    try:
+        if not is_html(content):
+            return False
+        content = BeautifulSoup(content).get_text()
+        if len(content) < MIN_WORD or len(content) > MAX_WORD:
+            return False
+        return True
+    except:
         return False
-    content = BeautifulSoup(content).get_text()
-    if len(content) < MIN_WORD or len(content) > MAX_WORD:
-        return False
-    return True
 
 def get_token_from_file(file_name):
     """
@@ -46,14 +49,12 @@ def get_token_from_file(file_name):
             data = json.load(f)
             content = data["content"] #could be string or html string
             if not can_be_index(content):
-                f.close()
                 return (-1,set())
+            content = BeautifulSoup(content).get_text()
             tokens = nltk.tokenize.word_tokenize(content)
             filtered_tokens = [word.lower() for word in tokens]
-            f.close()
             return (1,set(filtered_tokens))
         except Exception as e:
-            f.close()
             return (-1,set())
 
 def store_data(data,filename=PRE_TOKEN_DATA_PATH):
@@ -99,7 +100,7 @@ def get_all_files_and_tokens(dataset):
     print("generating tokens...")
     tokens = set()
     size = len(dataset)
-    print_every = 1000 #print every 500 files
+    print_every = 500 #print every 500 files
     begin = time.time()
     end = time.time()
     for i,filename in enumerate(dataset):
@@ -144,7 +145,7 @@ def unique(tokenlist):
 def main():
     dataset = get_all_file_names(DATA_PATH)
 
-    indexablefiles,tokens = get_all_files_and_tokens(dataset[:1000])
+    indexablefiles,tokens = get_all_files_and_tokens(dataset[:5000])
     # tokens = normalize(tokens)
     # tokens = unique(tokens)
     # print("after normalizing:",len(tokens),tokens[:20])
