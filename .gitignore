@@ -1,1 +1,6 @@
 .vs
+DEV/
+merged.p
+data/filenames_DEV_cache.p
+__pycache__/indexer.cpython-311.pyc
+

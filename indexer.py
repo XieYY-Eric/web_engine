@@ -97,6 +97,22 @@ class indexer:
             print(f"Batch {i+1}/{number_of_batch} completed {(end-begin):.3f}s")
             begin = end
         print(f"number of pages indexed {len(self.indexedDocument)}")
+    
+    def merge(self,file1,file2):
+        with open(file1,"rb") as f:
+            table1 =  pickle.load(f)
+        with open(file2,"rb") as f:
+            table2 = pickle.load(f)
+        for k, v in table1[token] + table2[token]:
+            table1[k] = table1.get(k, 0) + v
+        '''
+        with open(fileName, 'wb') as f: 
+            pickle.dump(table1, f)    
+        '''
+
+            
+
+
               
 
 
