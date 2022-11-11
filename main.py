@@ -14,8 +14,8 @@ DATA_PATH = "./data/DEV"
 PRE_TOKEN_DATA_PATH = "./data/tokens_DEV_cache.p"
 PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p" 
 USE_CACHE = False #set to true to load the pre_computed token
-MAX_WORD = 20000
-MIN_WORD = 1000
+MAX_WORD = 30000
+MIN_WORD = 500
 PS = PorterStemmer()
 ###
 
@@ -50,7 +50,10 @@ def get_token_from_file(file_name):
             content = data["content"] #could be string or html string
             if not can_be_index(content):
                 return (-1,set())
-            content = BeautifulSoup(content).get_text()
+            soup = BeautifulSoup(content)
+            content = ""
+            for section in soup.find_all('p'):
+                content += (section.get_text() + " ") 
             tokens = nltk.tokenize.word_tokenize(content)
             filtered_tokens = [word.lower() for word in tokens]
             return (1,set(filtered_tokens))
@@ -144,19 +147,20 @@ def unique(tokenlist):
 
 def main():
     dataset = get_all_file_names(DATA_PATH)
-
-    indexablefiles,tokens = get_all_files_and_tokens(dataset[:5000])
-    # tokens = normalize(tokens)
-    # tokens = unique(tokens)
-    # print("after normalizing:",len(tokens),tokens[:20])
+    indexablefiles,tokens = get_all_files_and_tokens(dataset)
+    tokens = normalize(tokens)
+    tokens = unique(tokens)
+    print("after normalizing:",len(tokens),tokens[:20])
     # filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024
     # print("Index is", filekb, "KBs large")
 
  
     ###indexing pages
-    # myindexer = indexer.indexer(True)
-    # ###create batches of files
-    # print(myindexer.indices)
+    myindexer = indexer.indexer(indexablefiles[:1024],tokens)
+    myindexer.index_all_Doc()
+    ###create batches of files
+    index_table1 = read_data("./data/Index_table/0.p")
+    index_table2 = read_data("./data/Index_table/1.p")
     
     
 
