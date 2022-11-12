@@ -147,40 +147,41 @@ class indexer:
                 tokens.append("")
                 empty += 1
             else:
-                filelines.append(self.process_index_txt(x)) #a dic with just that token  
-                tokens.append(filelines[i].keys()[0])
+                filelines.append(self.process_index_txt(x)) #a dic with just that token 
+                tokens.append(list(filelines[i].keys())[0])
 
         index = open("main_index.txt", "a")
 
         while empty < number_of_files:
-             sorted_tokens = tokens
+             sorted_tokens = [newcopy for newcopy in tokens]
              sorted_tokens.sort() 
              to_write = {}
              lines_to_replace = []
 
              y = 0
-             while sorted_tokens[x] == "": #ignore any empty files
+             while sorted_tokens[y] == "": #ignore any empty files
                  y += 1
              
              for l in range(0, len(tokens)):
                  if sorted_tokens[y] == tokens[l]:
+                     
                      lines_to_replace.append(l)
-                     if tokens[l].keys()[0] in to_write.keys(): #just add it on
-                         to_write[tokens[l].keys()[0]].extend(tokens[l])
+                     if tokens[l] in to_write.keys(): #just add it on
+                         to_write[tokens[l]].extend(filelines[l][tokens[l]])
                      else:
-                         to_write[tokens[l].keys()[0]] = tokens[l] 
+                         to_write[tokens[l]] = filelines[l][tokens[l]]
              #have the line to write now
-             index.write(f"{sorted_tokens[y]}: {to_write[sorted_tokens[x]]}/n")
+             index.write(f"{sorted_tokens[y]}: {to_write[sorted_tokens[y]]}\n")
 
              for each in lines_to_replace:
-                 nline = txtfiles[each].readline
+                 nline = txtfiles[each].readline()
                  if nline == "":
                     filelines.append("")
                     tokens.append("")
                     empty += 1
                  else:
-                    filelines[each] = self.process_index_txt(x) #a dic with just that token  
-                    tokens[each] = filelines[i].keys()[0]
+                    filelines[each] = self.process_index_txt(nline) #a dic with just that token  
+                    tokens[each] = list(filelines[each].keys())[0]
 
         for j in txtfiles: #close all the files
             j.close()
@@ -192,17 +193,16 @@ class indexer:
         '''token: [list of pairs], returns a dict'''
         data = {}
         token = line[:line.index(":")]
-        x = line[line.index("[")+5:line.index("]")]
-        info = line.split("Pair")
+        x = line[line.index(":")+7:line.index("]")]
+        info = x.split("Pair")
 
         for each in range(0, len(info)):
-            pairtuple =info[each][1:info[each].index(")")]
+            pairtuple =info[each][1:info[each].index(")")].split(", ")
             if each == 0:
                 data[token] = [Pair(int(pairtuple[0][pairtuple[0].index("=")+1:]),int(pairtuple[1][pairtuple[1].index("=")+1:]))]
             else:
-                data[token].append([Pair(int(pairtuple[0][pairtuple[0].index("=")+1:]),int(pairtuple[1][pairtuple[1].index("=")+1:]))])
+                data[token].extend([Pair(int(pairtuple[0][pairtuple[0].index("=")+1:]),int(pairtuple[1][pairtuple[1].index("=")+1:]))])
         return data
-
 
   
             
