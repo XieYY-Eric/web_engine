@@ -151,26 +151,15 @@ def unique(tokenlist):
 def main():
     dataset = get_all_file_names(DATA_PATH)
     # # indexablefiles,tokens = get_all_files_and_tokens(dataset)
-    # # print("before normalizing:",len(tokens),tokens[:20])
-    # # tokens = normalize(tokens)
-    # # tokens = unique(tokens)
-    # # print("after normalizing:",len(tokens),tokens[:20])
-    # # filekb = os.path.getsize(PRE_FILENAME_DATA_PATH) /1024
-    # # print("Index is", filekb, "KBs large")
 
  
     # ###indexing pages
-    myindexer = indexer.indexer(dataset[:20],10,INDEX_TABLE_PREFIX,MIN_WORD,MAX_WORD)
-    # myindexer.sort_to_partial_file(46)
-    myindexer.index_all_Doc()
-    # ###create batches of files
-    index_table1 = read_data("./data/Index_tables/0.p")
-    # index_table2 = read_data("./data/Index_tables/1.p")
-    # if USE_CACHE:
-    #     store_data(myindexer.indexedDocument,"./data/Index_tables/IndexedPages.p")
-    # print("--------------\n")
-    # print(index_table2)
+    myindexer = indexer.indexer(dataset,1024,INDEX_TABLE_PREFIX,MIN_WORD,MAX_WORD)
 
+    # myindexer.index_all_Doc()
+
+    myindexer.sort_to_partial_file(46)
+    # myindexer.merge_files(2)
     
 
 

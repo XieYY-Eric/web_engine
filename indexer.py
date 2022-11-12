@@ -37,6 +37,8 @@ def normalize(tokenlist):
     filter_tokens = [re.sub(r'[^\w\s]', '', token) for token in tokenlist]
     #lower
     filter_tokens = [token.lower() for token in tokenlist]
+    #pure number
+    filter_tokens = [token for token in tokenlist if not str.isnumeric(token)]
     #stemming
     #filter_tokens = [PS.stem(token,to_lowercase=True) for token in tokenlist]
     return filter_tokens
@@ -71,8 +73,6 @@ class indexer:
                 if is_html(data):
                     tokens = getTokens(data)
                     tokens = normalize(tokens)
-                    print(tokens,sep=" ")
-                    input()
                     if len(tokens) > self.min_word and len(tokens) < self.max_word:
                         fredict = nltk.FreqDist(tokens)
                         for k,v in fredict.items():
@@ -111,6 +111,7 @@ class indexer:
         # self.merge_files(number_of_batch)
     
 
+
     def sort_to_partial_file(self, number_of_batch):
         for i in range(0, number_of_batch):
             file_to_open = self._partial_index_file_prefix+str(i)+".p"
@@ -120,7 +121,7 @@ class indexer:
             for j in sorted(data.keys()):
                 info = data[j]
                 info.sort(key=lambda x:x.DocID)
-                partial_index.write(f"{j}: {info}/n")
+                partial_index.write(f"{j}: {info}\n")
             partial_index.close()
 
     def merge_files(self, number_of_files):
@@ -195,20 +196,7 @@ class indexer:
         return data
 
 
-    '''
-    def merge(self,file1,file2):
-        with open(file1,"rb") as f:
-            table1 =  pickle.load(f)
-        with open(file2,"rb") as f:
-            table2 = pickle.load(f)
-        for token in table2:
-            if token in table1.keys():
-                for k, v in table1[token] + table2[token]:
-                    table1[k] = table1.get(k, 0) + v
-        with open(fileName, 'wb') as f:
-            pickle.dump(table1, f)    
-        '''
-        
+  
             
 
 
