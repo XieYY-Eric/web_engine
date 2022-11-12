@@ -3,6 +3,7 @@ from lib2to3.pgen2.tokenize import tokenize
 import pickle
 from collections import namedtuple
 import json
+from turtle import towards
 from bs4 import BeautifulSoup
 import re
 from nltk.stem import PorterStemmer
@@ -103,6 +104,7 @@ class indexer:
             begin = end
         print(f"number of pages indexed {len(self.indexedDocument)}")
         self.sort_to_partial_file(number_of_batch)
+        self.merge_files(number_of_batch)
     
 
     def sort_to_partial_file(self, number_of_batch):
@@ -118,9 +120,78 @@ class indexer:
             partial_index.close()
 
     def merge_files(self, number_of_files):
-        pass
+        txtfiles = []
+        filelines = []
+        tokens = []
+        empty = 0
+        for i in range(0,number_of_files):
+            f = self._partial_index_file_prefix+str(i)+".txt"
+            txtfiles.append(open(f, "r"))
+            
+            x = txtfiles[i].readline() #first line is read
+            if x == "": #file empty
+                filelines.append("")
+                tokens.append("")
+                empty += 1
+            else:
+                filelines.append(self.process_index_txt(x)) #a dic with just that token  
+                tokens.append(filelines[i].keys()[0])
 
-        '''
+        index = open("main_index.txt", "a")
+
+        while empty < number_of_files:
+             sorted_tokens = tokens
+             sorted_tokens.sort() 
+             to_write = {}
+             lines_to_replace = []
+
+             y = 0
+             while sorted_tokens[x] == "": #ignore any empty files
+                 y += 1
+             
+             for l in range(0, len(tokens)):
+                 if sorted_tokens[y] == tokens[l]:
+                     lines_to_replace.append(l)
+                     if tokens[l].keys()[0] in to_write.keys(): #just add it on
+                         to_write[tokens[l].keys()[0]].extend(tokens[l])
+                     else:
+                         to_write[tokens[l].keys()[0]] = tokens[l] 
+             #have the line to write now
+             index.write(f"{sorted_tokens[y]}: {to_write[sorted_tokens[x]]}/n")
+
+             for each in lines_to_replace:
+                 nline = txtfiles[each].readline
+                 if nline == "":
+                    filelines.append("")
+                    tokens.append("")
+                    empty += 1
+                 else:
+                    filelines[each] = self.process_index_txt(x) #a dic with just that token  
+                    tokens[each] = filelines[i].keys()[0]
+
+        for j in txtfiles: #close all the files
+            j.close()
+        index.close
+
+        #END OF INDEX MAKING
+
+    def process_index_txt(self,line):
+        '''token: [list of pairs], returns a dict'''
+        data = {}
+        token = line[:line.index(":")]
+        x = line[line.index("[")+5:line.index("]")]
+        info = line.split("Pair")
+
+        for each in range(0, len(info)):
+            pairtuple =info[each][1:info[each].index(")")]
+            if each == 0:
+                data[token] = [Pair(int(pairtuple[0][pairtuple[0].index("=")+1:]),int(pairtuple[1][pairtuple[1].index("=")+1:]))]
+            else:
+                data[token].append([Pair(int(pairtuple[0][pairtuple[0].index("=")+1:]),int(pairtuple[1][pairtuple[1].index("=")+1:]))])
+        return data
+
+
+    '''
     def merge(self,file1,file2):
         with open(file1,"rb") as f:
             table1 =  pickle.load(f)
@@ -129,8 +200,7 @@ class indexer:
         for token in table2:
             if token in table1.keys():
                 for k, v in table1[token] + table2[token]:
-                    table1[k] = table1.get(k, 0) + v'''
-        '''
+                    table1[k] = table1.get(k, 0) + v
         with open(fileName, 'wb') as f:
             pickle.dump(table1, f)    
         '''
