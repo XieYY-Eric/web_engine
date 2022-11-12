@@ -158,8 +158,8 @@ def main():
 
     # myindexer.index_all_Doc()
 
-    myindexer.sort_to_partial_file(46)
-    # myindexer.merge_files(2)
+    #myindexer.sort_to_partial_file(46)
+    myindexer.merge_files(46)
     
 
 
