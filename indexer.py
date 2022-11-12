@@ -10,6 +10,7 @@ from nltk.stem import PorterStemmer
 import nltk
 import time
 import math
+import regex as re
 
 
 
@@ -19,7 +20,8 @@ def getTokens(content):
     for section in soup.find_all('p'):
         text = section.get_text()
         data += (text + " ")
-    tokens = nltk.tokenize.word_tokenize(data)
+    regex_expression = r"[a-zA-Z\d]+"
+    tokens = re.findall(regex_expression,data)
     return tokens
 
 def is_html(content):
@@ -31,7 +33,7 @@ def is_html(content):
 
 
 def normalize(tokenlist):
-    #remove punctuation
+    # #remove punctuation
     filter_tokens = [re.sub(r'[^\w\s]', '', token) for token in tokenlist]
     #lower
     filter_tokens = [token.lower() for token in tokenlist]
@@ -69,6 +71,8 @@ class indexer:
                 if is_html(data):
                     tokens = getTokens(data)
                     tokens = normalize(tokens)
+                    print(tokens,sep=" ")
+                    input()
                     if len(tokens) > self.min_word and len(tokens) < self.max_word:
                         fredict = nltk.FreqDist(tokens)
                         for k,v in fredict.items():
@@ -103,8 +107,8 @@ class indexer:
             print(f"Batch {i+1}/{number_of_batch} completed {(end-begin):.3f}s")
             begin = end
         print(f"number of pages indexed {len(self.indexedDocument)}")
-        self.sort_to_partial_file(number_of_batch)
-        self.merge_files(number_of_batch)
+        # self.sort_to_partial_file(number_of_batch)
+        # self.merge_files(number_of_batch)
     
 
     def sort_to_partial_file(self, number_of_batch):
