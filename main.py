@@ -14,8 +14,7 @@ DATA_PATH = "./data/DEV"
 PRE_TOKEN_DATA_PATH = "./data/tokens_DEV_cache.p"
 PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p" 
 INDEX_TABLE_PREFIX="./data/Index_tables/"
-USE_CACHE = True 
-MAX_WORD = 50000
+MAX_WORD = 100000
 MIN_WORD = 10
 ###
 
@@ -146,20 +145,73 @@ def unique(tokenlist):
 
 
 
+def format_file(tokens,partial_tables,filename):
+    #get all the tokens
+    f = open(filename,"w")
+    for token in tokens:
+        if token in partial_tables:
+            data =[(tuple[0],tuple[1]) for tuple in partial_tables[token]]
+            f.write(f"{token}:{data}\n")
+        else:
+            f.write(f"{token}:[]\n")
+    f.close()
+
+def format_all_files(number_of_files):
+    tokens = list(read_data(PRE_TOKEN_DATA_PATH))
+    tokens.sort()
+    for i in range(number_of_files):
+        partial_table = read_data(INDEX_TABLE_PREFIX+str(i)+".p")
+        format_file(tokens,partial_table,"./data/Index_tables/"+str(i)+".txt")
+        print(f"file {i} formatted completed")
+
+
+def merge_all_files(number_of_files):
+    filenames = ["./data/Index_tables/"+str(i)+".txt" for i in range(number_of_files)]
+    files = [open(filename,"r") for filename in filenames]
+    next_lines = [files[i].readline() for i in range(number_of_files)]
+    line = next_lines[0]
+    file_to_write = "./data/index_table"
+    f = open(file_to_write,"w")
+    print_every = 100
+    count = 0
+    while line:
+        values = []
+        token = ""
+        for this_line in next_lines:
+            token,value = this_line.strip().split(":")
+            values.extend(eval(value))
+        f.write(f"{token}:{values}\n")
+        count += 1
+        if count%print_every:
+            print(f"merging token {count}")
+        next_lines = [files[i].readline() for i in range(number_of_files)]
+        line = next_lines[0]
+    f.close()
+    closing = [file.close() for file in files]
+
+
+
 
 
 def main():
     dataset = get_all_file_names(DATA_PATH)
-    # # indexablefiles,tokens = get_all_files_and_tokens(dataset)
+
 
  
-    # ###indexing pages
+    # #indexing pages
     myindexer = indexer.indexer(dataset,1024,INDEX_TABLE_PREFIX,MIN_WORD,MAX_WORD)
+    myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
 
-    # myindexer.index_all_Doc()
+    token = read_data(PRE_TOKEN_DATA_PATH)
+    index_file = read_data(PRE_FILENAME_DATA_PATH)
+    print(f"number of tokens {len(token)}\nnumber of files {len(index_file)}")
 
-    myindexer.sort_to_partial_file(46)
-    # myindexer.merge_files(2)
+    #format all 46 partial index table files
+    format_all_files(46)
+    #merge
+    merge_all_files(46)
+
+
     
 
 

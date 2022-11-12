@@ -47,7 +47,10 @@ def read_data(filename):
     with open(filename,"rb") as f:
         return pickle.load(f)
 
-
+def store_data(data,filename):
+    with open(filename,"wb") as f:
+        pickle.dump(data,f)
+        
 Pair = namedtuple("Pair", ["DocID", "Count"])
 class indexer:
     #IMPORTANT: CALL INDEXER CLOSE BEFORE TERMINATING THE PROGRAM!!!
@@ -61,6 +64,8 @@ class indexer:
         self.min_word = min_word
         self.max_word = max_word
         self.indexedDocument = []
+        self.unique_tokens = set()
+        self.logfile = None
 
     def index_DocBatch(self,documents_batch):
         index_table = {}
@@ -83,6 +88,8 @@ class indexer:
                                 index_table[k].append(p)
                         self.indexedDocument.append(d)
                         self.fileId += 1
+                else:
+                    self.logfile.write(f"filename {d} content {data[:20]}\n")
                 file.close()
             except Exception as e:
                 print(f"filename {d} Exception {e}")
@@ -94,21 +101,22 @@ class indexer:
             yield documents[i:min(i+size,num_of_files)]
 
     def index_all_Doc(self):
+        self.logfile = open("./data/LogFile.txt","w")
         begin = time.time()
         end = time.time()
         number_of_batch = math.ceil(len(self.allDocuments)/self._batch_size)
         for i,batch in enumerate(self.batch_of_documents(self.allDocuments,self._batch_size)):
             file_to_store = self._partial_index_file_prefix+str(i)+".p"
             index_table = self.index_DocBatch(batch)
-            f = open(file_to_store,"wb") #write new file
-            pickle.dump(index_table,f)
-            f.close
+            self.unique_tokens = self.unique_tokens.union(set(index_table.keys()))
+            store_data(index_table,file_to_store)
             end = time.time()
             print(f"Batch {i+1}/{number_of_batch} completed {(end-begin):.3f}s")
             begin = end
         print(f"number of pages indexed {len(self.indexedDocument)}")
-        # self.sort_to_partial_file(number_of_batch)
-        # self.merge_files(number_of_batch)
+        store_data(index_table,"./data/filenames_DEV_cache.p" )
+        store_data(self.unique_tokens,"./data/tokens_DEV_cache.p" )
+        self.logfile.close()
     
 
 
