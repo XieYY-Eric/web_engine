@@ -16,6 +16,7 @@ PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p"
 INDEX_TABLE_PREFIX="./data/Index_tables/"
 MAX_WORD = 100000
 MIN_WORD = 10
+USE_CACHE = True
 ###
 
 
@@ -59,7 +60,7 @@ def get_token_from_file(file_name):
             for section in soup.find_all('p'):
                 content += (section.get_text() + " ") 
             tokens = nltk.tokenize.word_tokenize(content)
-            filtered_tokens = normalize(filtered_tokens)
+            filtered_tokens = normalize(tokens)
             return (1,set(filtered_tokens))
         except Exception as e:
             return (-1,set())
@@ -191,8 +192,6 @@ def merge_all_files(number_of_files):
 
 
 
-
-
 def main():
     dataset = get_all_file_names(DATA_PATH)
 
@@ -210,9 +209,6 @@ def main():
     format_all_files(46)
     #merge
     merge_all_files(46)
-
-
-    
 
 
 if __name__ == "__main__":
