@@ -15,7 +15,7 @@ def find_token_using_token_pos(token):
     curr_token = ""
     while True:  # read entire token from memory
         line = f.readline()
-        curr_token += line
+        curr_token += str(line)
         if line.find(']') != -1:
             f.close()
             break
@@ -24,12 +24,16 @@ def find_token_using_token_pos(token):
 # this function uses normal file operations to find each token in index_table and return is as str
 def find_token(token):
     curr_token = ""
-    with open("./data/index_table.txt","rb") as f:   # get tokens from cache
-        while True:  # read entire token from memory
-            line = f.readline()
-            curr_token += line
-            if line.find(']'.encode('utf-8')) != -1:
+    f = open("./data/index_table.txt","rb")  # get tokens from cache
+    while True:  # read entire token from memory
+        line = f.readline()
+        if line[:len(token)].find(token.encode('utf-8')) != -1:
+            curr_token += str(line)
+            while line.find(']'.encode('utf-8')) != -1:
+                curr_token += str(line)
                 break
+            break
+    f.close()
     return curr_token
 
 def get_token_pos():
@@ -42,9 +46,11 @@ def get_token_pos():
         token_pos.update(token=pos)       # add token and its position to token_positions{}
 
 
-get_token_pos()   # if using get_token_pos() to get token positions
+# get_token_pos()   # if using get_token_pos() to get token positions
 # get query tokens
 print("Enter query : ")
 query = str(input())
 query_tokens = tokenize.word_tokenize(query)
 query_tokens = normalize(query_tokens)
+for token in query_tokens:
+    print(find_token(token))
