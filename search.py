@@ -4,21 +4,23 @@ import pickle
 from nltk import tokenize
 from main import normalize
 
-token_pos = {}      # if indexing the index, this will hold
+token_pos = { '000th':0 }      # if indexing the index, this will hold
                     # the positions of each token in index_table.txt
 
 # this function uses token_pos to find each token in index_table and return is as str
 def find_token_using_token_pos(token):
     pos = token_pos[token]  # get position of token in index_table.txt
-    f = open("index_table.txt", "r")
+    if pos is None:
+        return ''
+    f = open("./data/index_table.txt", "r")
     f.seek(pos)
     curr_token = ""
     while True:  # read entire token from memory
         line = f.readline()
         curr_token += str(line)
         if line.find(']') != -1:
-            f.close()
             break
+    f.close()
     return curr_token
 
 # this function uses normal file operations to find each token in index_table and return is as str
@@ -27,6 +29,8 @@ def find_token(token):
     f = open("./data/index_table.txt","rb")  # get tokens from cache
     while True:  # read entire token from memory
         line = f.readline()
+        if not line:
+            return ''
         if line[:len(token)].find(token.encode('utf-8')) != -1:
             curr_token += str(line)
             while line.find(']'.encode('utf-8')) != -1:
@@ -34,6 +38,8 @@ def find_token(token):
                 break
             break
     f.close()
+    curr_token = curr_token[2:]
+    curr_token = curr_token[:len(curr_token) - 5]
     return curr_token
 
 def get_token_pos():
@@ -53,4 +59,4 @@ query = str(input())
 query_tokens = tokenize.word_tokenize(query)
 query_tokens = normalize(query_tokens)
 for token in query_tokens:
-    print(find_token(token))
+    print(find_token_using_token_pos(token))
