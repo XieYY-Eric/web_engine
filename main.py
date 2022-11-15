@@ -22,27 +22,6 @@ USE_CACHE = True
 
 
 ##### Private/Helper/Inner function ---- usually called by other important function
-def is_html(content):
-    html_tag = [r"<!DOCTYPE html",r"<!DOCTYPE HTML"]
-    for tag in html_tag:
-        if tag in content:
-            return True
-    return False #expecting the top few string are html_tag
-
-def can_be_index(content):
-    try:
-        if not is_html(content):
-            print(content[:100])
-            return False
-        content = BeautifulSoup(content).get_text()
-        if len(content) < MIN_WORD or len(content) > MAX_WORD:
-            print("word count",len(content))
-            return False
-        return True
-    except:
-        print("Exception")
-        return False
-
 def get_token_from_file(file_name):
     """
     get all the token from one file, return as a tuple (status_code, result)
