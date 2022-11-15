@@ -113,7 +113,9 @@ def get_intersect_posting(query_dict):
     """
     intersect = [(1,2),(3,2),(4,2),(5,4),(22,6)]
     ##### step1, sort the query term from smallest posting to highest posting
-
+    tokens = query_dict.keys()
+    tokens.sort(key=lambda x: query_dict[x].size)
+    print(tokens)
     #### step2, get intersect from each pair one by one
 
     return intersect
