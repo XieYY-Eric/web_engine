@@ -64,8 +64,7 @@ def get_token_pos_eric(index_table_name,destination_filename):
     f.close()
     end = time.time()
     print(f"finished creating token_map, time:{end-begin:.3f}")
-    with open(destination_filename,"wb") as f:
-        pickle.dump(position_dict,f)
+    util.store_data(position_dict,destination_filename)
     
 
 

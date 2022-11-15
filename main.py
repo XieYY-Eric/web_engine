@@ -33,10 +33,10 @@ def format_file(tokens,partial_tables,filename):
     f.close()
 
 def format_all_files(number_of_files):
-    tokens = list(read_data(PRE_TOKEN_DATA_PATH))
+    tokens = list(util.read_data(util.PRE_TOKEN_DATA_PATH))
     tokens.sort()
     for i in range(number_of_files):
-        partial_table = read_data(INDEX_TABLE_PREFIX+str(i)+".p")
+        partial_table = util.read_data(util.INDEX_TABLE_PREFIX+str(i)+".p")
         format_file(tokens,partial_table,"./data/Index_tables/"+str(i)+".txt")
         print(f"file {i} formatted completed")
 
@@ -73,7 +73,7 @@ def main():
  
     # #indexing pages
     myindexer = indexer.indexer(dataset,1024,util.INDEX_TABLE_PREFIX,util.MIN_WORD,util.MAX_WORD)
-    myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
+    #myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
 
     token = util.read_data(util.PRE_TOKEN_DATA_PATH)
     index_file = util.read_data(util.PRE_FILENAME_DATA_PATH)
