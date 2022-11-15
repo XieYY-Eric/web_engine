@@ -82,13 +82,13 @@ def main():
         if query == "quit":
             break
         ##query_tokens = tokenize.word_tokenize(query) [ERIC] since we used regex to tokenize the sentence, we should use regex here as well
+        begin = time.time()
         regex_expression = r"[a-zA-Z\d]+"
         query_tokens = re.findall(regex_expression,query)
         query_tokens = util.normalize(query_tokens)
         query_dict  ={}
         for token in query_tokens:
             query_dict[token] = find_posting_using_token_pos(postion_lookup_table,token)
-            print(f"token {token} :-> {find_posting_using_token_pos(postion_lookup_table,token)}")
         intersect = get_intersect_posting(query)
         
         top5_document = [all_file_names[docID] for docID, _ in intersect]
@@ -97,7 +97,8 @@ def main():
             with open(document,"r") as f:
                 data = json.load(f)
                 urls.append(data["url"])
-        print(f"Top {len(urls)} results: {urls}")
+        end = time.time()
+        print(f"Top {len(urls)} results: {urls} Query time {end-begin:.3f}")
 
 
 

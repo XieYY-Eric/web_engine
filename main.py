@@ -45,9 +45,9 @@ def merge_all_files(number_of_files):
     files = [open(filename,"r") for filename in filenames]
     next_lines = [files[i].readline() for i in range(number_of_files)]
     line = next_lines[0]
-    file_to_write = "./data/index_table"
+    file_to_write = "./data/index_table.txt"
     f = open(file_to_write,"w")
-    print_every = 100
+    print_every = 10000
     count = 0
     while line:
         values = []
@@ -57,7 +57,7 @@ def merge_all_files(number_of_files):
             values.extend(eval(value))
         f.write(f"{token}:{values}\n")
         count += 1
-        if count%print_every:
+        if count%print_every == 0:
             print(f"merging token {count}")
         next_lines = [files[i].readline() for i in range(number_of_files)]
         line = next_lines[0]
@@ -73,7 +73,7 @@ def main():
  
     # #indexing pages
     myindexer = indexer.indexer(dataset,1024,util.INDEX_TABLE_PREFIX,util.MIN_WORD,util.MAX_WORD)
-    #myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
+    myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
 
     token = util.read_data(util.PRE_TOKEN_DATA_PATH)
     index_file = util.read_data(util.PRE_FILENAME_DATA_PATH)

@@ -1,3 +1,3 @@
-number of tokens 66880
-number of files 9667
-disk size: 34935 kb
+number of tokens 69312
+number of files 19083
+disk size: 42510 kb

@@ -25,11 +25,10 @@ def getTokens(content):
     return tokens
 
 def is_html(content):
-    html_tag = [r"<!DOCTYPE html",r"<!DOCTYPE HTML",r"html"]
-    for tag in html_tag:
-        if tag in content[:100]:
-            return True
-    return False #expecting the top few string are html_tag
+    html_tag = "html"
+    return html_tag in content[:1000].lower()
+            
+    
 
       
 Pair = namedtuple("Pair", ["DocID", "Count"])

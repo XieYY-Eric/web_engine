@@ -38,9 +38,9 @@ def normalize(tokenlist):
     # #remove punctuation
     filter_tokens = [re.sub(r'[^\w\s]', '', token) for token in tokenlist]
     #lower
-    filter_tokens = [token.lower() for token in tokenlist]
+    filter_tokens = [token.lower() for token in filter_tokens]
     #pure number
-    filter_tokens = [token for token in tokenlist if not str.isnumeric(token)]
+    filter_tokens = [token for token in filter_tokens if not str.isnumeric(token)]
     #stemming
     #filter_tokens = [PS.stem(token,to_lowercase=True) for token in tokenlist]
     return filter_tokens
