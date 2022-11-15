@@ -89,7 +89,7 @@ def main():
         query_dict  ={}
         for token in query_tokens:
             query_dict[token] = find_posting_using_token_pos(postion_lookup_table,token)
-        intersect = get_intersect_posting(query)
+        intersect = get_intersect_posting(query_dict)
         
         top5_document = [all_file_names[docID] for docID, _ in intersect]
         urls = []
@@ -113,13 +113,20 @@ def get_intersect_posting(query_dict):
     """
     intersect = [(1,2),(3,2),(4,2),(5,4),(22,6)]
     ##### step1, sort the query term from smallest posting to highest posting
-    tokens = query_dict.keys()
-    tokens.sort(key=lambda x: query_dict[x].size)
-    print(tokens)
-    #### step2, get intersect from each pair one by one
+    tokens = list(query_dict.keys())
+    tokens.sort(key=lambda x: len(query_dict[x]))
 
-    return intersect
-    
+    ids = []
+    combined = query_dict[tokens[0]]
+    #### step2, get intersect from each pair one by one
+    for token in tokens:
+        if token != tokens[0]: 
+            postings = dict(ids)
+            combined = [(x,y+postings[x]) for x,y in query_dict[token] if x in postings.keys()]
+        ids = combined
+        combined = []
+    ids.sort(key = lambda y: -y[1])
+    return ids[0:5]
 
 if __name__ == "__main__":
     main()
