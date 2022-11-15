@@ -2,12 +2,13 @@ import re
 import mmap
 import pickle
 from nltk import tokenize
-from main import normalize
 import time
 import os
+import util
+import json
 
-token_pos = { '000th':0 }      # if indexing the index, this will hold
-                    # the positions of each token in index_table.txt
+# token_pos = { '000th':0 }      # if indexing the index, this will hold
+#                     # the positions of each token in index_table.txt
 
 # this function uses token_pos to find each token in index_table and return is as str
 def find_posting_using_token_pos(postion_lookup_table,token):
@@ -68,19 +69,58 @@ def get_token_pos_eric(index_table_name,destination_filename):
     
 
 
-get_token_pos_eric("./data/index_table.txt","./data/postion_lookup_table.p")   # if using get_token_pos() to get token positions
-postion_lookup_table = None
-with open("./data/postion_lookup_table.p","rb") as f:
-    postion_lookup_table = pickle.load(f)
+def main():
+    postion_lookup_table_file_name = "./data/postion_lookup_table.p"
+    if not os.path.exists(postion_lookup_table_file_name):
+        get_token_pos_eric("./data/index_table.txt",postion_lookup_table_file_name)   # if using get_token_pos() to get token positions
+    postion_lookup_table = util.read_data("./data/postion_lookup_table.p")
+    all_file_names = util.read_data("./data/filenames_DEV_cache.p")
+
+    while True:
+        # get query tokens
+        print("Enter query ('quit' to end): ")
+        query = str(input())
+        if query == "quit":
+            break
+        ##query_tokens = tokenize.word_tokenize(query) [ERIC] since we used regex to tokenize the sentence, we should use regex here as well
+        regex_expression = r"[a-zA-Z\d]+"
+        query_tokens = re.findall(regex_expression,query)
+        query_tokens = util.normalize(query_tokens)
+        query_dict  ={}
+        for token in query_tokens:
+            query_dict[token] = find_posting_using_token_pos(postion_lookup_table,token)
+            print(f"token {token} :-> {find_posting_using_token_pos(postion_lookup_table,token)}")
+        intersect = get_intersect_posting(query)
+        
+        top5_document = [all_file_names[docID] for docID, _ in intersect]
+        urls = []
+        for document in top5_document:
+            with open(document,"r") as f:
+                data = json.load(f)
+                urls.append(data["url"])
+        print(f"Top {len(urls)} results: {urls}")
 
 
-# get query tokens
-print("Enter query : ")
-query = str(input())
-##
-##query_tokens = tokenize.word_tokenize(query) [ERIC] since we used regex to tokenize the sentence, we should use regex here as well
-regex_expression = r"[a-zA-Z\d]+"
-query_tokens = re.findall(regex_expression,query)
-query_tokens = normalize(query_tokens)
-for token in query_tokens:
-    print(f"token {token} :-> {find_posting_using_token_pos(postion_lookup_table,token)}")
+
+
+def get_intersect_posting(query_dict):
+    """
+    query_dict: a dict, token as key, posting as value
+    token: a string value
+    posting : a list of tuple (DocID, frequency)
+
+    return : a list of posting (DocID, frequency)
+    """
+    intersect = [(1,2),(3,2),(4,2),(5,4),(22,6)]
+    ##### step1, sort the query term from smallest posting to highest posting
+
+    #### step2, get intersect from each pair one by one
+
+    return intersect
+    
+
+if __name__ == "__main__":
+    main()
+
+
+
