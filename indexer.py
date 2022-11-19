@@ -5,9 +5,10 @@ from collections import namedtuple
 import json
 from turtle import towards
 from bs4 import BeautifulSoup
-import re
 from nltk.stem import PorterStemmer
 import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 import time
 import math
 import regex as re
@@ -30,7 +31,6 @@ def is_html(content):
             
     
 
-      
 Pair = namedtuple("Pair", ["DocID", "Count"])
 class indexer:
     #IMPORTANT: CALL INDEXER CLOSE BEFORE TERMINATING THE PROGRAM!!!
@@ -97,12 +97,5 @@ class indexer:
         util.store_data(self.indexedDocument,"./data/filenames_DEV_cache.p" )
         util.store_data(self.unique_tokens,"./data/tokens_DEV_cache.p" )
         self.logfile.close()
-    
-
-
-    
-
-
-              
 
 

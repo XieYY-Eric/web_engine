@@ -7,8 +7,6 @@ import os
 import util
 import json
 
-# token_pos = { '000th':0 }      # if indexing the index, this will hold
-#                     # the positions of each token in index_table.txt
 
 # this function uses token_pos to find each token in index_table and return is as str
 def find_posting_using_token_pos(postion_lookup_table,token):
@@ -20,35 +18,6 @@ def find_posting_using_token_pos(postion_lookup_table,token):
         curr_token,posting = f.readline().decode("utf-8").strip().split(":")
         return eval(posting)
 
-# # this function uses normal file operations to find each token in index_table and return is as str
-# def find_token(token):
-#     curr_token = ""
-#     f = open("./data/index_table.txt","rb")  # get tokens from cache
-#     while True:  # read entire token from memory
-#         line = f.readline()
-#         if not line:
-#             return ''
-#         if line[:len(token)].find(token.encode('utf-8')) != -1:
-#             curr_token += str(line)
-#             while line.find(']'.encode('utf-8')) != -1:
-#                 curr_token += str(line)
-#                 break
-#             break
-#     f.close()
-#     curr_token = curr_token[2:]
-#     curr_token = curr_token[:len(curr_token) - 5]
-#     return curr_token
-
-# def get_token_pos():
-#     with open("./data/tokens_DEV_cache.p","rb") as f:   # get tokens from cache
-#         data = pickle.load(f)
-#         data = list(data)
-#         data.sort()
-#     for token in data[:10]:      # get position of each token in index_table.txt
-#         with open(r'./data/index_table_small.txt', 'rb', 0) as file:
-#             s = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-#             pos = s.find(token.encode('utf-8'))
-#         token_pos.update(token=pos)       # add token and its position to token_positions{}
 
 def get_token_pos_eric(index_table_name,destination_filename):
     begin = time.time()
@@ -66,7 +35,26 @@ def get_token_pos_eric(index_table_name,destination_filename):
     print(f"finished creating token_map, time:{end-begin:.3f}")
     util.store_data(position_dict,destination_filename)
     
-
+def get_file_counts():
+    file_counts = {}
+    f = open("./data/index_table.txt","r")
+    for line in f:
+        token,postings = line.strip().split(":")
+        temp = postings.strip('][').split(', ')
+        i = 0
+        while i < len(temp):
+            doc_id = temp[i].strip(')(')
+            count = temp[i+1].strip(')(')
+            print(doc_id,end=' : ')
+            print(count)
+            i += 2
+            if doc_id not in file_counts:
+                file_counts.update({doc_id:count})
+            else:
+                curr_count = file_counts[doc_id]
+                file_counts.update({doc_id:curr_count+count})
+    f.close()
+    util.store_data(file_counts, './data/file_counts.p')
 
 def main():
     postion_lookup_table_file_name = "./data/postion_lookup_table.p"
@@ -75,6 +63,7 @@ def main():
     postion_lookup_table = util.read_data("./data/postion_lookup_table.p")
     all_file_names = util.read_data("./data/filenames_DEV_cache.p")
 
+    #get_file_counts()  # get number of tokens in each file, stores them in file_counts.p
     while True:
         # get query tokens
         print("Enter query ('quit' to end): ")
@@ -86,7 +75,7 @@ def main():
         regex_expression = r"[a-zA-Z\d]+"
         query_tokens = re.findall(regex_expression,query)
         query_tokens = util.normalize(query_tokens)
-        query_dict  ={}
+        query_dict = {}
         for token in query_tokens:
             query_dict[token] = find_posting_using_token_pos(postion_lookup_table,token)
         intersect = get_intersect_posting(query_dict)
@@ -99,8 +88,6 @@ def main():
                 urls.append(data["url"])
         end = time.time()
         print(f"Top {len(urls)} results: {urls} Query time {end-begin:.3f}")
-
-
 
 
 def get_intersect_posting(query_dict):
