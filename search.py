@@ -6,6 +6,7 @@ import time
 import os
 import util
 import json
+import math
 
 
 # this function uses token_pos to find each token in index_table and return is as str
@@ -17,7 +18,6 @@ def find_posting_using_token_pos(postion_lookup_table,token):
         f.seek(position)
         curr_token,posting = f.readline().decode("utf-8").strip().split(":")
         return eval(posting)
-
 
 def get_token_pos_eric(index_table_name,destination_filename):
     begin = time.time()
@@ -56,12 +56,22 @@ def get_file_counts():
     f.close()
     util.store_data(file_counts, './data/file_counts.p')
 
+
+def get_idf(d,D):
+    """
+    d is the length of posting, D is the length of all_indexed_url
+    """
+    #0 means this token is seen everywhere, provide no information
+    #higher means this token is unique to some document
+    return max(0,math.log(D/(1+d))) #bound the value from 0 to positive value
+
+
 def main():
     postion_lookup_table_file_name = "./data/postion_lookup_table.p"
     if not os.path.exists(postion_lookup_table_file_name):
         get_token_pos_eric("./data/index_table.txt",postion_lookup_table_file_name)   # if using get_token_pos() to get token positions
-    postion_lookup_table = util.read_data("./data/postion_lookup_table.p")
-    all_file_names = util.read_data("./data/filenames_DEV_cache.p")
+    postion_lookup_table = util.read_data(postion_lookup_table_file_name)
+    all_indexed_url = util.read_data(util.PRE_INDEXED_URL_PATH)
 
     #get_file_counts()  # get number of tokens in each file, stores them in file_counts.p
     while True:
@@ -76,18 +86,15 @@ def main():
         query_tokens = re.findall(regex_expression,query)
         query_tokens = util.normalize(query_tokens)
         query_dict = {}
+        posting_begin = time.time()
         for token in query_tokens:
             query_dict[token] = find_posting_using_token_pos(postion_lookup_table,token)
+        posing_end = time.time()
+        print(f"Finding Post time: {posing_end-posting_begin:.3f}")
         intersect = get_intersect_posting(query_dict)
-        
-        top5_document = [all_file_names[docID] for docID, _ in intersect]
-        urls = []
-        for document in top5_document:
-            with open(document,"r") as f:
-                data = json.load(f)
-                urls.append(data["url"])
+        top5_urls = [all_indexed_url[docID] for docID, _ in intersect]
         end = time.time()
-        print(f"Top {len(urls)} results: {urls} Query time {end-begin:.3f}")
+        print(f"Top {len(top5_urls)} results: {top5_urls} \nQuery time {end-begin:.3f}")
 
 
 def get_intersect_posting(query_dict):
@@ -98,7 +105,7 @@ def get_intersect_posting(query_dict):
 
     return : a list of posting (DocID, frequency)
     """
-    intersect = [(1,2),(3,2),(4,2),(5,4),(22,6)]
+    start = time.time()
     ##### step1, sort the query term from smallest posting to highest posting
     tokens = list(query_dict.keys())
     tokens.sort(key=lambda x: len(query_dict[x]))
@@ -113,6 +120,8 @@ def get_intersect_posting(query_dict):
         ids = combined
         combined = []
     ids.sort(key = lambda y: -y[1])
+    end = time.time()
+    print(f"Intersect_posting time: {end-start:.3f}s")
     return ids[0:5]
 
 if __name__ == "__main__":

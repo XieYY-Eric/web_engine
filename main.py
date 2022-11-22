@@ -32,8 +32,8 @@ def format_file(tokens,partial_tables,filename):
             f.write(f"{token}:[]\n")
     f.close()
 
-def format_all_files(number_of_files):
-    tokens = list(util.read_data(util.PRE_TOKEN_DATA_PATH))
+def format_all_files(number_of_files,tokens):
+    #formet the file, make sure every token appear in the
     tokens.sort()
     for i in range(number_of_files):
         partial_table = util.read_data(util.INDEX_TABLE_PREFIX+str(i)+".p")
@@ -41,7 +41,7 @@ def format_all_files(number_of_files):
         print(f"file {i} formatted completed")
 
 def merge_all_files(number_of_files):
-    filenames = ["./data/Index_tables/"+str(i)+".txt" for i in range(number_of_files)]
+    filenames = [util.INDEX_TABLE_PREFIX+str(i)+".txt" for i in range(number_of_files)]
     files = [open(filename,"r") for filename in filenames]
     next_lines = [files[i].readline() for i in range(number_of_files)]
     line = next_lines[0]
@@ -67,20 +67,18 @@ def merge_all_files(number_of_files):
 
 
 def main():
+    #read file names from DEV folder
     dataset = util.get_all_file_names(util.DATA_PATH)
-
-
- 
-    # #indexing pages
+    #indexing pages
     myindexer = indexer.indexer(dataset,1024,util.INDEX_TABLE_PREFIX,util.MIN_WORD,util.MAX_WORD)
     myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
 
-    token = util.read_data(util.PRE_TOKEN_DATA_PATH)
-    index_file = util.read_data(util.PRE_FILENAME_DATA_PATH)
+    token = list(util.read_data(util.PRE_TOKEN_DATA_PATH))
+    index_file = util.read_data(util.PRE_INDEXED_URL_PATH)
     print(f"number of tokens {len(token)}\nnumber of files {len(index_file)}")
 
     #format all 46 partial index table files
-    format_all_files(46)
+    format_all_files(46,token)
     #merge
     merge_all_files(46)
 

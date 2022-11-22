@@ -13,8 +13,9 @@ import util
 ### Global variables, 
 DATA_PATH = "./data/DEV"
 PRE_TOKEN_DATA_PATH = "./data/tokens_DEV_cache.p"
-PRE_FILENAME_DATA_PATH = "./data/filenames_DEV_cache.p" 
+PRE_INDEXED_URL_PATH = "./data/indexed_url_DEV_cache.p" 
 INDEX_TABLE_PREFIX="./data/Index_tables/"
+LOG_FILE = "./data/LogFile.txt"
 MAX_WORD = 100000
 MIN_WORD = 10
 USE_CACHE = True
@@ -55,10 +56,10 @@ def unique(tokenlist):
             unique.add(token)
     return result
 
-def store_data(data,filename=PRE_TOKEN_DATA_PATH):
+def store_data(data,filename):
     with open(filename,"wb") as f:
         pickle.dump(data,f)
-    print(f"writting data to {filename}")
+        print(f"writting data to {filename}")
 
 def read_data(filename):
     with open(filename,"rb") as f:
