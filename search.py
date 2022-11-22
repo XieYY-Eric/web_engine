@@ -138,9 +138,9 @@ def get_intersect_posting(query_dict):
     """
     query_dict: a dict, token as key, posting as value
     token: a string value
-    posting : a list of tuple (DocID, frequency)
+    posting : a list of tuple (DocID, tf_idf_score)
 
-    return : a list of posting (DocID, frequency)
+    return : a list of posting (DocID, tf_idf_score)
     """
     start = time.time()
     ##### step1, sort the query term from smallest posting to highest posting
