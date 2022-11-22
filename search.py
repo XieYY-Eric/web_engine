@@ -9,18 +9,34 @@ import json
 import math
 
 
+
+
 # this function uses token_pos to find each token in index_table and return is as str
 def find_posting_using_token_pos(postion_lookup_table,token,file):
+    hashing_begin = time.time()
     if token not in postion_lookup_table:
         return []
     position = postion_lookup_table[token]
+    hashing_end = time.time()
+    print(f"Hashing time {hashing_end-hashing_begin:.3f}")
+    seek_begin = time.time()
     file.seek(position)
+    seek_end = time.time()
+    print(f"Seeking time {seek_end-seek_begin:.3f}")
+    read_begin = time.time()
     curr_token,posting = file.readline().decode("utf-8").strip().split(":")
-    return eval(posting)
-    # with open("./data/index_table.txt", "rb") as f:
-    #     f.seek(position)
-    #     curr_token,posting = f.readline().decode("utf-8").strip().split(":")
-    #     return eval(posting)
+    read_end= time.time()
+    print(f"read time {read_end-read_begin:.3f}")
+    eval_begin = time.time()
+    re_expression = r"\(([^\)]+)\)"
+    matches = re.findall(re_expression,posting)
+    posting = []
+    if len(matches) != 0:
+        matches =[  match.split(",") for match in matches]
+        posting = [(int(dID),float(tf)) for dID,tf in matches ]
+    eval_end= time.time()
+    print(f"eval time {eval_end-eval_begin:.3f}")
+    return posting
 
 def get_token_pos_eric(index_table_name,destination_filename):
     begin = time.time()
@@ -68,6 +84,18 @@ def get_idf(d,D):
     #higher means this token is unique to some document
     return max(0,math.log(D/(1+d))) #bound the value from 0 to positive value
 
+def compute_tf_idf(query_dict,number_of_D):
+    """
+    tf-idf = tf*idf, query_dict already contains tf in posting, idf can be calculated using above formula
+    """
+    begin = time.time()
+    result = {}
+    for token,posting in query_dict.items():
+        d = len(posting)
+        result[token] = [(dID,tf*get_idf(d,number_of_D)) for dID,tf in posting]
+    end = time.time()
+    print(f"finished computing_tf_idf, time:{end-begin:.3f}")
+    return result
 
 def main():
     postion_lookup_table_file_name = "./data/postion_lookup_table.p"
@@ -75,6 +103,7 @@ def main():
         get_token_pos_eric("./data/index_table.txt",postion_lookup_table_file_name)   # if using get_token_pos() to get token positions
     postion_lookup_table = util.read_data(postion_lookup_table_file_name)
     all_indexed_url = util.read_data(util.PRE_INDEXED_URL_PATH)
+    number_of_url = len(all_indexed_url)
     with open("./data/index_table.txt", "rb") as file:
         #get_file_counts()  # get number of tokens in each file, stores them in file_counts.p
         while True:
@@ -91,9 +120,14 @@ def main():
             query_dict = {}
             posting_begin = time.time()
             for token in query_tokens:
-                query_dict[token] = find_posting_using_token_pos(postion_lookup_table,token,file)
+                token_begin = time.time()
+                posting = find_posting_using_token_pos(postion_lookup_table,token,file)
+                token_end = time.time()
+                query_dict[token] = posting   
+                print(f"one token {token} time {token_end-token_begin:.3f}")
             posing_end = time.time()
             print(f"Finding Post time: {posing_end-posting_begin:.3f}")
+            query_dict = compute_tf_idf(query_dict,number_of_url)
             intersect = get_intersect_posting(query_dict)
             top5_urls = [all_indexed_url[docID] for docID, _ in intersect]
             end = time.time()
