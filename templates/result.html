@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Result{% endblock %}
+{% block header %}<h1>Top 5 Links</h1>{% endblock %}
+{% block content %}
+<div class="result">
+    <ul>
+        {% for x in content %}
+            <li><a href = "{{x}}">{{ x }}</a></li>
+        {% endfor %}
+      </ul>
+</div>
+{% endblock %}

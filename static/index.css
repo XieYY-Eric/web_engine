@@ -1,0 +1,30 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: blanchedalmond;
+}
+
+header{
+  margin-left: auto;
+  width: 20em;
+  margin-right: auto;
+  color: aqua;
+}
+  
+.content{
+  vertical-align: middle;
+  align-items: center;
+}
+
+.search_bar{
+  display: block;
+  text-align: center;
+}
+
+.result{
+  margin-top: 10ch;
+}
