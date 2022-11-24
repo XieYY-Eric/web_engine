@@ -1,13 +1,8 @@
-from ast import Lambda
-from lib2to3.pgen2.tokenize import tokenize
-import pickle
 from collections import namedtuple
 import json
 from turtle import towards
 from bs4 import BeautifulSoup
-from nltk.stem import PorterStemmer
 import nltk
-from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import time
 import math
@@ -39,11 +34,11 @@ def getTokens(content):
     return tokens
 
 
+#using logarithmically scaled frequency: tf(t,d) = log (1 + ft,d)
 
-Pair = namedtuple("Pair", ["DocID", "tf"])
+
+Pair = namedtuple("Pair", ["DocID", "count"])
 class indexer:
-    #IMPORTANT: CALL INDEXER CLOSE BEFORE TERMINATING THE PROGRAM!!!
-    #TO-DO M2: add tf-idf score. Run unique tokens through and take the last in the array and the second of the pair and divide by word count
     def __init__(self, allDocuments,batch_size,index_file_prefix,min_word,max_word):
         '''make the indexer add the inverted index filepaths and the indexer of that'''
         self.allDocuments = allDocuments
@@ -54,6 +49,7 @@ class indexer:
         self.max_word = max_word
         self.indexedUrl = []
         self.unique_tokens = set()
+        self.number_of_partial_table = 0
         self.logfile = None
 
     def index_DocBatch(self,documents_batch):
@@ -70,7 +66,7 @@ class indexer:
                 if len(tokens) > self.min_word and len(tokens) < self.max_word:
                     fredict = nltk.FreqDist(tokens)
                     for k,v in fredict.items():
-                        p = Pair(self.fileId,v/len(tokens))
+                        p = Pair(self.fileId,v)
                         if k not in index_table:
                             index_table[k] = [p]
                         else:
@@ -84,7 +80,6 @@ class indexer:
                 self.logfile.write(f"{d} {e}\n")
                 
         return index_table
-    
     
     def batch_of_documents(self,documents,size):
         """
@@ -104,6 +99,7 @@ class indexer:
             index_table = self.index_DocBatch(batch)
             self.unique_tokens = self.unique_tokens.union(set(index_table.keys()))
             util.store_data(index_table,file_to_store)
+            self.number_of_partial_table = i
             end = time.time()
             print(f"Batch {i+1}/{number_of_batch} completed {(end-begin):.3f}s")
             begin = end
@@ -111,5 +107,71 @@ class indexer:
         util.store_data(self.indexedUrl,util.PRE_INDEXED_URL_PATH )
         util.store_data(self.unique_tokens,util.PRE_TOKEN_DATA_PATH )
         self.logfile.close()
+        print("Start formating partial table...")
+        tokens = list(self.unique_tokens)
+        self.format_all_files(self.number_of_partial_table,tokens)
+        self.merge_all_files(self.number_of_partial_table)
+
+    def format_file(self,tokens,partial_tables,filename):
+        #get all the tokens
+        f = open(filename,"w",encoding="utf-8")
+        for token in tokens:
+            if token in partial_tables:
+                data =[(tuple[0],tuple[1]) for tuple in partial_tables[token]]
+                f.write(f"{token}:{data}\n")
+            else:
+                f.write(f"{token}:[]\n")
+        f.close()
+
+    def format_all_files(self,number_of_files,tokens):
+        #formet the file, make sure every token appear in the
+        tokens.sort()
+        for i in range(number_of_files):
+            partial_table = util.read_data(util.INDEX_TABLE_PREFIX+str(i)+".p")
+            self.format_file(tokens,partial_table,"./data/Index_tables/"+str(i)+".txt")
+            print(f"file {i} formatted completed")
+
+    def merge_all_files(self,number_of_files):
+        filenames = [util.INDEX_TABLE_PREFIX+str(i)+".txt" for i in range(number_of_files)]
+        files = [open(filename,"r") for filename in filenames]
+        next_lines = [files[i].readline() for i in range(number_of_files)]
+        line = next_lines[0]
+        file_to_write = util.INDEX_TABLE_NAME
+        f = open(file_to_write,"w",encoding="utf-8")
+        print_every = 10000
+        count = 0
+        total_url_indexed = len(self.indexedUrl)
+        while line:
+            values = []
+            token = ""
+            for this_line in next_lines:
+                token,value = this_line.strip().split(":")
+                values.extend(eval(value))
+            #convert count to idf-tf
+            processed_value = []
+            d = len(values)
+            for (DID,count) in values:
+                df = math.log(1+count)
+                idf = max(0,math.log(total_url_indexed/(1+d)))
+                processed_value.append((DID,df*idf))
+            f.write(f"{token}:{processed_value}\n")
+            count += 1
+            if count%print_every == 0:
+                print(f"merging token {count}")
+            next_lines = [files[i].readline() for i in range(number_of_files)]
+            line = next_lines[0]
+        f.close()
+        closing = [file.close() for file in files]
 
 
+def main():
+    #read file names from DEV folder
+    dataset = util.get_all_file_names(util.DATA_PATH)
+    #indexing pages
+    myindexer = indexer(dataset,2048,util.INDEX_TABLE_PREFIX,util.MIN_WORD,util.MAX_WORD)
+    myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
+
+
+
+if __name__ == "__main__":
+    main()

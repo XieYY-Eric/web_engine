@@ -8,41 +8,68 @@ import util
 import json
 import math
 
+class Search_engine:
+    def __init__(self,index_table,lookup_table) -> None:
+        self.postion_lookup_table = lookup_table
+        self.all_indexed_url = util.read_data(util.PRE_INDEXED_URL_PATH)
+        self.number_of_url = len(self.all_indexed_url)
+        self.number_of_token = len(lookup_table)
+        self.index_table = index_table
+        self.max_cache_size = 1000 #1000 token cache
+        self.cache = {}
+        
+    def find_posting_using_token_pos(self,postion_lookup_table,token,file):
+        # this function uses token_pos to find each token in index_table and return is as str
+        hashing_begin = time.time()
+        if token not in postion_lookup_table:
+            return []
+        position = postion_lookup_table[token]
+        hashing_end = time.time()
+        # print(f"Hashing time {hashing_end-hashing_begin:.3f}")
+        seek_begin = time.time()
+        file.seek(position)
+        seek_end = time.time()
+        # print(f"Seeking time {seek_end-seek_begin:.3f}")
+        read_begin = time.time()
+        curr_token,posting = file.readline().decode("utf-8").strip().split(":")
+        read_end= time.time()
+        # print(f"read time {read_end-read_begin:.3f}")
+        eval_begin = time.time()
+        re_expression = r"\(([^\)]+)\)"
+        matches = re.findall(re_expression,posting)
+        posting = []
+        if len(matches) != 0:
+            matches =[  match.split(",") for match in matches]
+            posting = [(int(dID),float(tf)) for dID,tf in matches ]
+        eval_end= time.time()
+        # print(f"eval time {eval_end-eval_begin:.3f}")
+        return posting
 
+    def search(self,query):
+        regex_expression = r"[a-zA-Z\d]+"
+        query_tokens = re.findall(regex_expression,query)
+        query_tokens = util.normalize(query_tokens)
+        query_dict = {}
+        for token in query_tokens:
+            if token in self.cache:
+                query_dict[token] = self.cache[token]
+            else:
+                query_dict[token] = self.find_posting_using_token_pos(self.postion_lookup_table,token,self.index_table)
+                if len(self.cache) >=1000:
+                    self.cache.clear()
+                self.cache[token] = query_dict[token]
+        intersect = get_intersect_posting(query_dict)
+        top5_urls = [self.all_indexed_url[docID] for docID, _ in intersect[:5]]
+        return top5_urls
 
-
-# this function uses token_pos to find each token in index_table and return is as str
-def find_posting_using_token_pos(postion_lookup_table,token,file):
-    hashing_begin = time.time()
-    if token not in postion_lookup_table:
-        return []
-    position = postion_lookup_table[token]
-    hashing_end = time.time()
-    print(f"Hashing time {hashing_end-hashing_begin:.3f}")
-    seek_begin = time.time()
-    file.seek(position)
-    seek_end = time.time()
-    print(f"Seeking time {seek_end-seek_begin:.3f}")
-    read_begin = time.time()
-    curr_token,posting = file.readline().decode("utf-8").strip().split(":")
-    read_end= time.time()
-    print(f"read time {read_end-read_begin:.3f}")
-    eval_begin = time.time()
-    re_expression = r"\(([^\)]+)\)"
-    matches = re.findall(re_expression,posting)
-    posting = []
-    if len(matches) != 0:
-        matches =[  match.split(",") for match in matches]
-        posting = [(int(dID),float(tf)) for dID,tf in matches ]
-    eval_end= time.time()
-    print(f"eval time {eval_end-eval_begin:.3f}")
-    return posting
+    def __str__(self):
+        return f"Search_Engine\n\t# of token {self.number_of_token}\n\t# of url {self.number_of_url}"
 
 def get_token_pos_eric(index_table_name,destination_filename):
     begin = time.time()
     position = 0
     position_dict = {}
-    f = open(index_table_name,"r")
+    f = open(index_table_name,"r",encoding="utf-8")
     for line in f:
         token,posting = line.strip().split(":")
         position_dict[token] = position
@@ -75,65 +102,6 @@ def get_file_counts():
     f.close()
     util.store_data(file_counts, './data/file_counts.p')
 
-
-def get_idf(d,D):
-    """
-    d is the length of posting, D is the length of all_indexed_url
-    """
-    #0 means this token is seen everywhere, provide no information
-    #higher means this token is unique to some document
-    return max(0,math.log(D/(1+d))) #bound the value from 0 to positive value
-
-def compute_tf_idf(query_dict,number_of_D):
-    """
-    tf-idf = tf*idf, query_dict already contains tf in posting, idf can be calculated using above formula
-    """
-    begin = time.time()
-    result = {}
-    for token,posting in query_dict.items():
-        d = len(posting)
-        result[token] = [(dID,tf*get_idf(d,number_of_D)) for dID,tf in posting]
-    end = time.time()
-    print(f"finished computing_tf_idf, time:{end-begin:.3f}")
-    return result
-
-def main():
-    postion_lookup_table_file_name = "./data/postion_lookup_table.p"
-    if not os.path.exists(postion_lookup_table_file_name):
-        get_token_pos_eric("./data/index_table.txt",postion_lookup_table_file_name)   # if using get_token_pos() to get token positions
-    postion_lookup_table = util.read_data(postion_lookup_table_file_name)
-    all_indexed_url = util.read_data(util.PRE_INDEXED_URL_PATH)
-    number_of_url = len(all_indexed_url)
-    with open("./data/index_table.txt", "rb") as file:
-        #get_file_counts()  # get number of tokens in each file, stores them in file_counts.p
-        while True:
-            # get query tokens
-            print("Enter query ('quit' to end): ")
-            query = str(input())
-            if query == "quit":
-                break
-            ##query_tokens = tokenize.word_tokenize(query) [ERIC] since we used regex to tokenize the sentence, we should use regex here as well
-            begin = time.time()
-            regex_expression = r"[a-zA-Z\d]+"
-            query_tokens = re.findall(regex_expression,query)
-            query_tokens = util.normalize(query_tokens)
-            query_dict = {}
-            posting_begin = time.time()
-            for token in query_tokens:
-                token_begin = time.time()
-                posting = find_posting_using_token_pos(postion_lookup_table,token,file)
-                token_end = time.time()
-                query_dict[token] = posting   
-                print(f"one token {token} time {token_end-token_begin:.3f}")
-            posing_end = time.time()
-            print(f"Finding Post time: {posing_end-posting_begin:.3f}")
-            query_dict = compute_tf_idf(query_dict,number_of_url)
-            intersect = get_intersect_posting(query_dict)
-            top5_urls = [all_indexed_url[docID] for docID, _ in intersect]
-            end = time.time()
-            print(f"Top {len(top5_urls)} results: {top5_urls} \nQuery time {end-begin:.3f}")
-
-
 def get_intersect_posting(query_dict):
     """
     query_dict: a dict, token as key, posting as value
@@ -159,7 +127,31 @@ def get_intersect_posting(query_dict):
     ids.sort(key = lambda y: -y[1])
     end = time.time()
     print(f"Intersect_posting time: {end-start:.3f}s")
-    return ids[0:5]
+    return ids
+
+def main():
+    #get the byte address of each token, look up table
+    postion_lookup_table_file_name = "./data/postion_lookup_table.p"
+    get_token_pos_eric("./data/index_table.txt",postion_lookup_table_file_name)
+    lookup_table =  util.read_data(postion_lookup_table_file_name)
+
+    with open("./data/index_table.txt","rb") as f:
+        #pass the file and lookup table to search engine
+        search_engine = Search_engine(f,lookup_table)
+        print(search_engine)
+        while True:
+            print("Enter query ('quit' to end): ")
+            query = str(input())
+            if query == "quit":
+                break
+            begin = time.time()
+            result = search_engine.search(query)
+            end = time.time()
+            print(f"Top {len(result)} results: {result} \nQuery time {end-begin:.3f}")
+
+
+
+
 
 if __name__ == "__main__":
     main()
