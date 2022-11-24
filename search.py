@@ -58,7 +58,7 @@ class Search_engine:
                 if len(self.cache) >=1000:
                     self.cache.clear()
                 self.cache[token] = query_dict[token]
-        intersect = get_intersect_posting(query_dict)
+        intersect = get_intersect_posting(self,query_dict)
         top5_urls = [self.all_indexed_url[docID] for docID, _ in intersect[:5]]
         return top5_urls
 
@@ -102,7 +102,13 @@ def get_file_counts():
     f.close()
     util.store_data(file_counts, './data/file_counts.p')
 
-def get_intersect_posting(query_dict):
+def normalize(vector):
+    result = 0
+    for term in vector:
+        result +=  vector[term] * vector[term]
+    return math.sqrt(result)
+
+def get_intersect_posting(self,query_dict):
     """
     query_dict: a dict, token as key, posting as value
     token: a string value
@@ -114,16 +120,24 @@ def get_intersect_posting(query_dict):
     ##### step1, sort the query term from smallest posting to highest posting
     tokens = list(query_dict.keys())
     tokens.sort(key=lambda x: len(query_dict[x]))
+    
+    queryvector = {}
+    for token in tokens:
+        queryvector[token] = max(0,math.log(self.number_of_url/(1+len(query_dict[token]))))* 1/len(tokens)
 
     ids = []
-    combined = query_dict[tokens[0]]
+    combined = [(x,y*queryvector[token]) for x,y in query_dict[tokens[0]]]
+
     #### step2, get intersect from each pair one by one
     for token in tokens:
         if token != tokens[0]: 
             postings = dict(ids)
-            combined = [(x,y+postings[x]) for x,y in query_dict[token] if x in postings.keys()]
+            combined = [(x,y*queryvector[token] + postings[x]) for x,y in query_dict[token] if x in postings.keys()]
         ids = combined
         combined = []
+
+    denominator = normalize(queryvector) * normalize(dict(ids))
+    ids = [(x,y/denominator) for x,y in ids]
     ids.sort(key = lambda y: -y[1])
     end = time.time()
     print(f"Intersect_posting time: {end-start:.3f}s")
