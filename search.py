@@ -132,7 +132,7 @@ def get_intersect_posting(self,query_dict):
     for token in tokens:
         if token != tokens[0]: 
             postings = dict(ids)
-            combined = [(x,y*queryvector[token] + postings[x]) for x,y in query_dict[token] if x in postings.keys()]
+            combined = [(x,y*queryvector[token] + postings[x]) if x in postings.keys() else (x,y*queryvector[token]) for x,y in query_dict[token]  ]
         ids = combined
         combined = []
 
