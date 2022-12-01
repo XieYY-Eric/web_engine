@@ -133,7 +133,7 @@ class indexer:
         f = open(filename,"w",encoding="utf-8")
         for token in tokens:
             if token in partial_tables:
-                data =[(tuple[0],tuple[1]) for tuple in partial_tables[token]]
+                data =[(tuple[0],tuple[1],tuple[2]) for tuple in partial_tables[token]]
                 f.write(f"{token}:{data}\n")
             else:
                 f.write(f"{token}:[]\n")
@@ -166,10 +166,10 @@ class indexer:
             #convert count to idf-tf
             processed_value = []
             d = len(values)
-            for (DID,count) in values:
+            for (DID,count,importance) in values:
                 df = math.log(1+count)
                 idf = max(0,math.log(total_url_indexed/(1+d)))
-                processed_value.append((DID,df*idf))
+                processed_value.append((DID,df*idf,importance))
             f.write(f"{token}:{processed_value}\n")
             count += 1
             if count%print_every == 0:
