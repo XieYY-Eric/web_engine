@@ -17,6 +17,8 @@ def is_html(content):
 
 def getTokens(content):
     data = ""
+    important_tokens = {}
+
     if is_html(content):
         #is html file, index it
         soup = BeautifulSoup(content)
@@ -26,18 +28,30 @@ def getTokens(content):
         #     data += (text + " ")
         #### all find text
         data = soup.get_text(separator=" ",strip=True)
+        regex_expression = r"[a-zA-Z\d]+"
+        tokens = re.findall(regex_expression, data)
+
+        # get all important tokens from doc
+        for tags in soup.find_all(selector, limit=5):
+            text = tags.get_text(separator=" ", strip=True)
+            tag_tokens = re.findall(regex_expression, text)
+            important_tokens += util.normalize(tag_tokens)
     else:
         #non html, treat it as raw page
         data = content
-    regex_expression = r"[a-zA-Z\d]+"
-    tokens = re.findall(regex_expression,data)
-    return tokens
+        regex_expression = r"[a-zA-Z\d]+"
+        tokens = re.findall(regex_expression,data)
 
+    return tokens, important_tokens
+
+
+def selector(tag):
+    return tag.name == 'title' or tag.name == 'bold' or tag.name == 'h1' or tag.name == 'h2' or tag.name == 'h3'
 
 #using logarithmically scaled frequency: tf(t,d) = log (1 + ft,d)
 
 
-Pair = namedtuple("Pair", ["DocID", "count"])
+Pair = namedtuple("Pair", ["DocID", "count", "importance"])
 class indexer:
     def __init__(self, allDocuments,batch_size,index_file_prefix,min_word,max_word):
         '''make the indexer add the inverted index filepaths and the indexer of that'''
@@ -52,21 +66,22 @@ class indexer:
         self.number_of_partial_table = 0
         self.logfile = None
 
-    def index_DocBatch(self,documents_batch):
+    def index_DocBatch(self, documents_batch):
         index_table = {}
         for d in documents_batch:
             try:
-                file = open(d,"r")
+                file = open(d, "r")
                 data = json.load(file)
                 url = data["url"]
                 data = data["content"]
                 ##process the string, get the token from string
-                tokens = getTokens(data)
+                tokens, important_tokens = getTokens(data)
                 tokens = util.normalize(tokens)
                 if len(tokens) > self.min_word and len(tokens) < self.max_word:
                     fredict = nltk.FreqDist(tokens)
-                    for k,v in fredict.items():
-                        p = Pair(self.fileId,v)
+                    for k, v in fredict.items():
+                        importance = 1 if k in important_tokens else 0
+                        p = Pair(self.fileId, v, importance)
                         if k not in index_table:
                             index_table[k] = [p]
                         else:
@@ -78,7 +93,7 @@ class indexer:
                 file.close()
             except Exception as e:
                 self.logfile.write(f"{d} {e}\n")
-                
+
         return index_table
     
     def batch_of_documents(self,documents,size):
@@ -95,6 +110,7 @@ class indexer:
         end = time.time()
         number_of_batch = math.ceil(len(self.allDocuments)/self._batch_size)
         for i,batch in enumerate(self.batch_of_documents(self.allDocuments,self._batch_size)):
+            print(f"Batch {i + 1}/{number_of_batch} started")
             file_to_store = self._partial_index_file_prefix+str(i)+".p"
             index_table = self.index_DocBatch(batch)
             self.unique_tokens = self.unique_tokens.union(set(index_table.keys()))
