@@ -17,7 +17,7 @@ def is_html(content):
 
 def getTokens(content):
     data = ""
-    important_tokens = {}
+    important_tokens = set()
 
     if is_html(content):
         #is html file, index it
@@ -35,7 +35,8 @@ def getTokens(content):
         for tags in soup.find_all(selector, limit=5):
             text = tags.get_text(separator=" ", strip=True)
             tag_tokens = re.findall(regex_expression, text)
-            important_tokens += util.normalize(tag_tokens)
+            #print(set(util.normalize(list(tag_tokens))))
+            important_tokens.update(set(util.normalize(list(tag_tokens))))
     else:
         #non html, treat it as raw page
         data = content
@@ -184,7 +185,7 @@ def main():
     dataset = util.get_all_file_names(util.DATA_PATH)
     #indexing pages
     myindexer = indexer(dataset,2048,util.INDEX_TABLE_PREFIX,util.MIN_WORD,util.MAX_WORD)
-    # myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
+    myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
     all_tokens = list(util.read_data(util.PRE_TOKEN_DATA_PATH))
     all_urls_size = len(util.read_data(util.PRE_INDEXED_URL_PATH))
     number_of_partial_table = 10 # replace this value with the actual number
