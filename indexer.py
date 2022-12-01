@@ -126,7 +126,7 @@ class indexer:
         print("Start formating partial table...")
         tokens = list(self.unique_tokens)
         self.format_all_files(self.number_of_partial_table,tokens)
-        self.merge_all_files(self.number_of_partial_table)
+        self.merge_all_files(self.number_of_partial_table,len(self.indexedUrl))
 
     def format_file(self,tokens,partial_tables,filename):
         #get all the tokens
@@ -147,7 +147,7 @@ class indexer:
             self.format_file(tokens,partial_table,"./data/Index_tables/"+str(i)+".txt")
             print(f"file {i} formatted completed")
 
-    def merge_all_files(self,number_of_files):
+    def merge_all_files(self,number_of_files,total_url_indexed):
         filenames = [util.INDEX_TABLE_PREFIX+str(i)+".txt" for i in range(number_of_files)]
         files = [open(filename,"r") for filename in filenames]
         next_lines = [files[i].readline() for i in range(number_of_files)]
@@ -156,7 +156,6 @@ class indexer:
         f = open(file_to_write,"w",encoding="utf-8")
         print_every = 10000
         count = 0
-        total_url_indexed = len(self.indexedUrl)
         while line:
             values = []
             token = ""
@@ -185,7 +184,14 @@ def main():
     dataset = util.get_all_file_names(util.DATA_PATH)
     #indexing pages
     myindexer = indexer(dataset,2048,util.INDEX_TABLE_PREFIX,util.MIN_WORD,util.MAX_WORD)
-    myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
+    # myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
+    all_tokens = list(util.read_data(util.PRE_TOKEN_DATA_PATH))
+    all_urls_size = len(util.read_data(util.PRE_INDEXED_URL_PATH))
+    number_of_partial_table = 10 # replace this value with the actual number
+    myindexer.format_all_files(number_of_partial_table,all_tokens)
+    myindexer.merge_all_files(number_of_partial_table,all_urls_size)
+    
+
 
 
 
