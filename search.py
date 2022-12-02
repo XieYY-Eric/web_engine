@@ -20,46 +20,41 @@ class Search_engine:
         
     def find_posting_using_token_pos(self,postion_lookup_table,token,file):
         # this function uses token_pos to find each token in index_table and return is as str
-        hashing_begin = time.time()
+
         if token not in postion_lookup_table:
             return []
         position = postion_lookup_table[token]
-        hashing_end = time.time()
-        # print(f"Hashing time {hashing_end-hashing_begin:.3f}")
-        seek_begin = time.time()
         file.seek(position)
-        seek_end = time.time()
-        # print(f"Seeking time {seek_end-seek_begin:.3f}")
-        read_begin = time.time()
         curr_token,posting = file.readline().decode("utf-8").strip().split(":")
-        read_end= time.time()
-        # print(f"read time {read_end-read_begin:.3f}")
-        eval_begin = time.time()
         re_expression = r"\(([^\)]+)\)"
         matches = re.findall(re_expression,posting)
         posting = []
         if len(matches) != 0:
             matches =[  match.split(",") for match in matches]
-            posting = [(int(dID),float(tf)) for dID,tf in matches ]
-        eval_end= time.time()
-        # print(f"eval time {eval_end-eval_begin:.3f}")
+            posting = [(int(dID),float(tfidf),int(weight)) for dID,tfidf,weight in matches ]
+
         return posting
 
     def search(self,query):
         regex_expression = r"[a-zA-Z\d]+"
         query_tokens = re.findall(regex_expression,query)
         query_tokens = util.normalize(query_tokens)
+        string_format = "|".join(query_tokens)
+        if string_format in self.cache:
+            return self.cache[string_format]
         query_dict = {}
         for token in query_tokens:
             if token in self.cache:
                 query_dict[token] = self.cache[token]
             else:
                 query_dict[token] = self.find_posting_using_token_pos(self.postion_lookup_table,token,self.index_table)
-                if len(self.cache) >=1000:
-                    self.cache.clear()
-                self.cache[token] = query_dict[token]
-        intersect = get_intersect_posting(self,query_dict)
-        top5_urls = [self.all_indexed_url[docID] for docID, _ in intersect[:5]]
+        # intersect = get_intersect_posting(self,query_dict)
+        # top5_urls = [self.all_indexed_url[docID] for docID, _ in intersect[:5]]
+        results = ranking_document(query_dict)
+        top5_urls = [self.all_indexed_url[docID] for docID, score in results[:5]]
+        if len(self.cache) >=1000:
+            self.cache.clear()
+        self.cache[string_format] = top5_urls
         return top5_urls
 
     def __str__(self):
@@ -143,10 +138,26 @@ def get_intersect_posting(self,query_dict):
     print(f"Intersect_posting time: {end-start:.3f}s")
     return ids
 
+def ranking_document(query_dict):
+    list_of_document = []
+    ##token is sorted order
+    query_tokens = list(query_dict.keys())
+    query_tokens.sort(key=lambda x: len(query_dict[x]))
+    document_score = {}
+    for token in query_tokens:
+        posting = query_dict[token]
+        for docID,tf_idf,postion_weight in sorted(posting,key=lambda x:x[1],reverse=True)[:100]:
+            if docID not in document_score:
+                document_score[docID] = tf_idf * (postion_weight+1) ##trivial ranking
+            else:
+                document_score[docID] += tf_idf * (postion_weight+1) ##trivial ranking
+    list_of_document = sorted(document_score.items(),key=lambda x:x[1],reverse=True)
+    return list_of_document
+
 def main():
     #get the byte address of each token, look up table
     postion_lookup_table_file_name = "./data/postion_lookup_table.p"
-    get_token_pos_eric("./data/index_table.txt",postion_lookup_table_file_name)
+    # get_token_pos_eric("./data/index_table.txt",postion_lookup_table_file_name)
     lookup_table =  util.read_data(postion_lookup_table_file_name)
 
     with open("./data/index_table.txt","rb") as f:
