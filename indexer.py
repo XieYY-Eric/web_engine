@@ -116,7 +116,7 @@ class indexer:
             index_table = self.index_DocBatch(batch)
             self.unique_tokens = self.unique_tokens.union(set(index_table.keys()))
             util.store_data(index_table,file_to_store)
-            self.number_of_partial_table = i
+            self.number_of_partial_table += 1
             end = time.time()
             print(f"Batch {i+1}/{number_of_batch} completed {(end-begin):.3f}s")
             begin = end
@@ -180,18 +180,21 @@ class indexer:
         closing = [file.close() for file in files]
 
 
+
+
+
 def main():
     #read file names from DEV folder
     dataset = util.get_all_file_names(util.DATA_PATH)
     #indexing pages
     myindexer = indexer(dataset,1024,util.INDEX_TABLE_PREFIX,util.MIN_WORD,util.MAX_WORD)
-    # myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
+    myindexer.index_all_Doc() #COMMENT out this if you dont wanna computing all over again
     all_tokens = list(util.read_data(util.PRE_TOKEN_DATA_PATH))
     all_urls_size = len(util.read_data(util.PRE_INDEXED_URL_PATH))
     print(len(all_tokens),all_urls_size)
-    number_of_partial_table = 55 # replace this value with the actual number
+    # number_of_partial_table = 55 # replace this value with the actual number
     # myindexer.format_all_files(number_of_partial_table,all_tokens)
-    myindexer.merge_all_files(number_of_partial_table,all_urls_size)
+    # myindexer.merge_all_files(number_of_partial_table,all_urls_size)
     
 
 
