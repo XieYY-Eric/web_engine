@@ -44,10 +44,7 @@ class Search_engine:
             return self.cache[string_format]
         query_dict = {}
         for token in query_tokens:
-            if token in self.cache:
-                query_dict[token] = self.cache[token]
-            else:
-                query_dict[token] = self.find_posting_using_token_pos(self.postion_lookup_table,token,self.index_table)
+            query_dict[token] = self.find_posting_using_token_pos(self.postion_lookup_table,token,self.index_table)
         # intersect = get_intersect_posting(self,query_dict)
         # top5_urls = [self.all_indexed_url[docID] for docID, _ in intersect[:5]]
         results = ranking_document(query_dict)
