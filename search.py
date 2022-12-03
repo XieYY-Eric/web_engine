@@ -145,9 +145,9 @@ def ranking_document(query_dict):
         posting = query_dict[token]
         for docID,tf_idf,postion_weight in sorted(posting,key=lambda x:x[1],reverse=True)[:100]:
             if docID not in document_score:
-                document_score[docID] = tf_idf * (postion_weight+1) ##trivial ranking
+                document_score[docID] = tf_idf * (1 + (postion_weight*0.1)) ##trivial ranking
             else:
-                document_score[docID] += tf_idf * (postion_weight+1) ##trivial ranking
+                document_score[docID] += tf_idf * (1 + (postion_weight*0.1)) ##trivial ranking
     list_of_document = sorted(document_score.items(),key=lambda x:x[1],reverse=True)
     return list_of_document
 
